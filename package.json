@@ -1,0 +1,58 @@
+{
+  "name": "cse-220",
+  "version": "1.0.0",
+  "description": "This is a project developed as the final assignement of **CSE-220 Web Programming** at Acibadem University, the backend is implemented in Django Python while the frontend is implemented in client/static only Next.js application.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krr0ptioN/cse-220.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Krr0ptioN/cse-220/issues"
+  },
+  "homepage": "https://github.com/Krr0ptioN/cse-220#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@next/eslint-plugin-next": "^16.1.6",
+    "@nx/devkit": "22.6.1",
+    "@nx/eslint": "22.6.1",
+    "@nx/eslint-plugin": "22.6.1",
+    "@nx/js": "22.6.1",
+    "@nx/next": "^22.6.1",
+    "@nx/playwright": "^22.6.1",
+    "@nxlv/python": "^22.1.1",
+    "@playwright/test": "^1.36.0",
+    "@swc-node/register": "~1.11.1",
+    "@swc/cli": "~0.8.0",
+    "@swc/core": "~1.15.5",
+    "@swc/helpers": "~0.5.18",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.8.0",
+    "eslint-config-next": "^16.1.6",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-jsx-a11y": "6.10.1",
+    "eslint-plugin-playwright": "^1.6.2",
+    "eslint-plugin-react": "7.35.0",
+    "eslint-plugin-react-hooks": "5.0.0",
+    "nx": "^22.6.1",
+    "prettier": "~3.6.2",
+    "tslib": "^2.3.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.40.0"
+  },
+  "nx": {},
+  "dependencies": {
+    "next": "~16.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
