@@ -1,0 +1,110 @@
+# =============================================================================
+# FlavorMap - Docker Compose Configuration
+# =============================================================================
+
+services:
+  # Django API
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: ${DOCKER_TARGET:-development}
+    container_name: flavormap-api
+    ports:
+      - '${API_PORT:-8000}:8000'
+    volumes:
+      - ./apps/api:/app
+      - media_volume:/app/media
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env
+    environment:
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-true}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-dev-key-change-in-production}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,api}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///app/db.sqlite3}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - flavormap-network
+    restart: unless-stopped
+
+  # Next.js Web (Nx Monorepo)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: ${DOCKER_TARGET:-development}
+    container_name: flavormap-web
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/node_modules
+      - /app/apps/web/.next
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      - api
+    networks:
+      - flavormap-network
+    restart: unless-stopped
+
+  # PostgreSQL Database (optional, for production-like development)
+  db:
+    image: postgres:16-alpine
+    container_name: flavormap-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-flavormap}
+      - POSTGRES_USER=${POSTGRES_USER:-flavormap}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-flavormap}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    networks:
+      - flavormap-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-flavormap}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO (S3-compatible object storage for file uploads)
+  minio:
+    image: minio/minio:latest
+    container_name: flavormap-minio
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    networks:
+      - flavormap-network
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  postgres_data:
+  minio_data:
+  media_volume:
+  static_volume:
+
+# Networks
+networks:
+  flavormap-network:
+    driver: bridge

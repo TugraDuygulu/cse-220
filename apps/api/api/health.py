@@ -1,6 +1,11 @@
-"""Sample Hello World application."""
+"""Health check endpoint for FlavorMap API."""
+
+from django.http import JsonResponse
 
 
 def health():
-    """Return a friendly greeting."""
-    return {"health": "ok"}
+    """Return API health status as JSON."""
+    return JsonResponse({
+        "status": "ok",
+        "service": "flavormap-api",
+    })

@@ -71,8 +71,10 @@ infra/minio/data
 /.logs
 
 # Backend logs
+/**/*.pyc
 apps/api/**/*.log
 apps/api/logs/
 .logs/backend/
 /nx
 /nx.bat
+/apps/api/db.sqlite3

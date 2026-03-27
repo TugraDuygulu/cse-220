@@ -1,0 +1,73 @@
+# =============================================================================
+# FlavorMap - Docker Ignore
+# =============================================================================
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node.js (if in monorepo)
+node_modules/
+.next/
+out/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+reports/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs/
+
+# Misc
+*.bak
+*.tmp
+*.temp
