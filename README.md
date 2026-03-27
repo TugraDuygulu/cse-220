@@ -15,3 +15,4 @@ where users can discover restaurants, read and write reviews, rate their dining 
 manage their favorite spots. Think of  it as a simplified version of Yelp or Google Reviews, built
 with Django and Next.js.  
 
+hello im tugra
