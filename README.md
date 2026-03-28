@@ -16,3 +16,4 @@ manage their favorite spots. Think of  it as a simplified version of Yelp or Goo
 with Django and Next.js.  
 
 hello im tugra
+im adding a new change.
