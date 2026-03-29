@@ -11,6 +11,8 @@ def health():
     uptime_seconds = int((now - START_TIME).total_seconds())
     return JsonResponse({
         "status": "ok",
+        "version": "1.0.0",
         "service": "flavormap-api",
         "uptime_seconds": uptime_seconds,
+
     })
