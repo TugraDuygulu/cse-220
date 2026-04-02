@@ -1,0 +1,33 @@
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enforce Conventional Commit style with required scope
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          REGEX='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)\([a-z0-9][a-z0-9._/-]*\)(!)?: .+'
+
+          if [[ ! "$PR_TITLE" =~ $REGEX ]]; then
+            echo "Invalid PR title: $PR_TITLE"
+            echo ""
+            echo "Expected format: type(scope): description"
+            echo "Examples:"
+            echo "  - feat(ui): add map marker clustering"
+            echo "  - fix(api): handle empty search query"
+            echo "  - chore(ci): add e2e workflow"
+            echo ""
+            echo "Scope is required."
+            exit 1
+          fi

@@ -4,7 +4,7 @@
   "description": "This is a project developed as the final assignement of **CSE-220 Web Programming** at Acibadem University, the backend is implemented in Django Python while the frontend is implemented in client/static only Next.js application.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No root-level tests configured\""
   },
   "repository": {
     "type": "git",

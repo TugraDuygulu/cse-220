@@ -1,0 +1,120 @@
+name: E2E
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  e2e:
+    name: Cypress E2E
+    if: ${{ github.event.review.state == 'approved' && github.event.review.user.login == 'Krr0ptioN' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure required checks passed before E2E
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const required = [
+              'CI / Lint and Build',
+              'PR Title / Validate PR title',
+            ]
+            const { owner, repo } = context.repo
+            const ref = context.payload.pull_request.head.sha
+
+            const checks = await github.paginate(github.rest.checks.listForRef, {
+              owner,
+              repo,
+              ref,
+              per_page: 100,
+            })
+
+            const failures = []
+            for (const checkName of required) {
+              const match = checks.find((c) => c.name === checkName)
+              if (!match || match.conclusion !== 'success') {
+                failures.push(checkName)
+              }
+            }
+
+            if (failures.length > 0) {
+              core.setFailed(`Cannot start E2E. Required checks not successful: ${failures.join(', ')}`)
+            }
+
+      - name: Setup backend dev environment and database
+        working-directory: apps/api
+        run: |
+          poetry install --no-interaction --no-root
+          poetry run python manage.py migrate
+
+      - name: Start backend
+        run: |
+          mkdir -p tmp
+          cd apps/api
+          nohup poetry run python manage.py runserver 127.0.0.1:8000 > ../../tmp/backend-ci.log 2>&1 &
+
+      - name: Wait for backend health endpoint
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:8000/api/health/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time."
+          exit 1
+
+      - name: Run Cypress E2E
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npx nx run web:dev
+          wait-on: 'http://127.0.0.1:3000, http://127.0.0.1:8000/api/health/'
+          wait-on-timeout: 240
+          browser: chrome
+          config-file: apps/web-e2e/cypress.config.ts
+          spec: apps/web-e2e/cypress/e2e/smoke.cy.ts
+
+      - name: Upload backend log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: tmp/backend-ci.log
+          if-no-files-found: ignore
+
+      - name: Upload Cypress screenshots and videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          if-no-files-found: ignore
