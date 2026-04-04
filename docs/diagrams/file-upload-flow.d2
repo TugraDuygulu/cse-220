@@ -1,0 +1,227 @@
+# File Upload Flow
+# MinIO Presigned URL Pattern
+
+direction: right
+
+# Participants
+client: Client {
+  shape: rectangle
+  style: {
+    fill: "#E3F2FD"
+    stroke: "#1976D2"
+    stroke-width: 2
+    border-radius: 8
+  }
+}
+
+api: Django API {
+  shape: rectangle
+  style: {
+    fill: "#C8E6C9"
+    stroke: "#388E3C"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  validate: "Validate Request" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  generate: "Generate Presigned URL" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  confirm: "Confirm Upload" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  thumbnail: "Generate Thumbnail\n(Celery)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+}
+
+minio: MinIO {
+  shape: cylinder
+  style: {
+    fill: "#FFE0B2"
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+db: PostgreSQL {
+  shape: cylinder
+  style: {
+    fill: "#D1C4E9"
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}
+
+celery: Celery Worker {
+  shape: rectangle
+  style: {
+    fill: "#FFF9C4"
+    stroke: "#F9A825"
+    stroke-width: 2
+    border-radius: 8
+  }
+}
+
+# Step 1: Request Upload URL
+step1: "Step 1: Request Presigned URL" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 14
+    bold: true
+  }
+}
+
+client -> api.validate: "POST /files/upload-url\n{filename, content_type,\nsize, purpose}" {
+  style: {
+    stroke: "#1976D2"
+    stroke-width: 2
+  }
+}
+
+api.validate -> api.generate: "Validate metadata\nGenerate object_key" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+api.generate -> minio: "Generate presigned PUT URL" {
+  style: {
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+minio -> api.generate: "Presigned URL\n(expires: 1 hour)" {
+  style: {
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+api.generate -> client: "Response\n{upload_id, presigned_url,\nobject_key}" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+# Step 2: Upload File
+step2: "Step 2: Upload to MinIO" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 14
+    bold: true
+  }
+}
+
+client -> minio: "PUT {presigned_url}\nContent-Type: image/jpeg\n{binary data}" {
+  style: {
+    stroke: "#1976D2"
+    stroke-width: 2
+    offset: 2
+  }
+}
+
+minio -> client: "200 OK" {
+  style: {
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+# Step 3: Confirm Upload
+step3: "Step 3: Confirm Upload" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 14
+    bold: true
+  }
+}
+
+client -> api.confirm: "POST /files\n{upload_id, object_key}" {
+  style: {
+    stroke: "#1976D2"
+    stroke-width: 2
+    offset: 2
+  }
+}
+
+api.confirm -> db: "INSERT INTO files\nCREATE file record" {
+  style: {
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}
+
+api.confirm -> api.thumbnail: "Queue thumbnail generation" {
+  style: {
+    stroke: "#F9A825"
+    stroke-width: 2
+    stroke-dash: 5
+  }
+}
+
+api.confirm -> client: "Response 201\n{file_id, url,\nmetadata}" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+# Step 4: Background Processing
+step4: "Step 4: Background Processing" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 14
+    bold: true
+  }
+}
+
+api.thumbnail -> celery: "Process image" {
+  style: {
+    stroke: "#F9A825"
+    stroke-width: 2
+    offset: 2
+  }
+}
+
+celery -> minio: "Upload thumbnails\n(3 sizes)" {
+  style: {
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+celery -> db: "UPDATE files\nSet thumbnail URLs" {
+  style: {
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}

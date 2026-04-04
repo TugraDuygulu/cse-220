@@ -1,0 +1,139 @@
+# System Architecture
+# FlavorMap - Restaurant Review Platform
+
+direction: right
+
+# Client Layer
+browser: Browser {
+  shape: rectangle
+  style: {
+    fill: "#E3F2FD"
+    stroke: "#1976D2"
+    stroke-width: 2
+    border-radius: 8
+  }
+}
+
+nextjs: Next.js 16 App {
+  shape: rectangle
+  style: {
+    fill: "#BBDEFB"
+    stroke: "#1565C0"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  pages: "Pages\n(Home, Restaurant,\nProfile, Search)" {
+    shape: rectangle
+    style: {
+      fill: "#E3F2FD"
+      border-radius: 4
+    }
+  }
+
+  components: "Components\n(RestaurantCard,\nReviewCard, MapView)" {
+    shape: rectangle
+    style: {
+      fill: "#E3F2FD"
+      border-radius: 4
+    }
+  }
+
+  services: "Services\n(api, auth, search)" {
+    shape: rectangle
+    style: {
+      fill: "#E3F2FD"
+      border-radius: 4
+    }
+  }
+
+  state: "State\n(AuthStore, UIStore)" {
+    shape: rectangle
+    style: {
+      fill: "#E3F2FD"
+      border-radius: 4
+    }
+  }
+}
+
+# Backend Layer
+django: Django 6 API {
+  shape: rectangle
+  style: {
+    fill: "#C8E6C9"
+    stroke: "#388E3C"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  middleware: "Middleware\n(Auth, CORS,\nRate Limit)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  apps: "Apps\n(Restaurants,\nReviews, Users,\nFiles)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  views: "Views\n(REST API\nEndpoints)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+}
+
+celery: Celery Workers {
+  shape: rectangle
+  style: {
+    fill: "#FFF9C4"
+    stroke: "#F9A825"
+    stroke-width: 2
+    border-radius: 8
+  }
+}
+
+# Data Layer
+postgresql: PostgreSQL {
+  shape: cylinder
+  style: {
+    fill: "#D1C4E9"
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}
+
+redis: Redis Cache {
+  shape: cylinder
+  style: {
+    fill: "#FFCDD2"
+    stroke: "#C62828"
+    stroke-width: 2
+  }
+}
+
+minio: MinIO Object Storage {
+  shape: cylinder
+  style: {
+    fill: "#FFE0B2"
+    stroke: "#EF6C00"
+    stroke-width: 2
+  }
+}
+
+# Connections
+browser -> nextjs: "HTTPS"
+nextjs -> django: "REST API\n(JSON)"
+django -> postgresql: "SQL\n(Django ORM)"
+django -> redis: "Cache\nRead/Write"
+django -> minio: "Presigned URLs\n(File Ops)"
+django -> celery: "Async Tasks"
+celery -> minio: "Process Files"

@@ -1,0 +1,191 @@
+# Authentication Flow
+# JWT Token Strategy
+
+direction: right
+
+# Client
+client: Client App {
+  shape: rectangle
+  style: {
+    fill: "#E3F2FD"
+    stroke: "#1976D2"
+    stroke-width: 2
+    border-radius: 8
+  }
+}
+
+# Server Components
+server: Django API {
+  shape: rectangle
+  style: {
+    fill: "#C8E6C9"
+    stroke: "#388E3C"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  auth_view: "Auth Views" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  jwt_service: "JWT Service" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  permission: "Permission\nClasses" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+}
+
+# Database
+db: PostgreSQL {
+  shape: cylinder
+  style: {
+    fill: "#D1C4E9"
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}
+
+# Login Flow
+login_label: "1. Login Flow" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 16
+    bold: true
+  }
+}
+
+client -> server.auth_view.login: "POST /auth/login\n{email, password}" {
+  style: {
+    stroke: "#1976D2"
+    stroke-width: 2
+  }
+}
+
+server.auth_view.login -> db: "Verify credentials" {
+  style: {
+    stroke: "#7B1FA2"
+    stroke-width: 2
+  }
+}
+
+server.auth_view.login -> server.jwt_service: "Generate tokens" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+server.jwt_service -> client: "Return tokens\n{access, refresh}" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+# API Request Flow
+request_label: "2. Authenticated Request" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 16
+    bold: true
+    offset: 16
+  }
+}
+
+client -> server.permission: "GET /restaurants\nBearer {access_token}" {
+  style: {
+    stroke: "#1976D2"
+    stroke-width: 2
+    offset: 2
+  }
+}
+
+server.permission -> server.jwt_service: "Validate token" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+server.permission -> server: "Pass request with user" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+# Token Refresh Flow
+refresh_label: "3. Token Refresh" {
+  shape: text
+  style: {
+    fill: "#1565C0"
+    font-size: 16
+    bold: true
+    offset: 32
+  }
+}
+
+client -> server.auth_view: "POST /auth/refresh\n{refresh_token}" {
+  style: {
+    stroke: "#F57C00"
+    stroke-width: 2
+    offset: 4
+  }
+}
+
+server.auth_view -> server.jwt_service: "Validate refresh\nGenerate new access" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+server.jwt_service -> client: "Return {new_access_token}" {
+  style: {
+    stroke: "#388E3C"
+    stroke-width: 2
+  }
+}
+
+# Token Storage
+storage: Token Storage {
+  shape: rectangle
+  style: {
+    fill: "#FFF3E0"
+    stroke: "#F57C00"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  memory: "Memory\nAccess Token\n(15 min)" {
+    shape: rectangle
+    style: {
+      fill: "#FFECB3"
+      border-radius: 4
+    }
+  }
+
+  cookie: "HttpOnly Cookie\nRefresh Token\n(7 days)" {
+    shape: rectangle
+    style: {
+      fill: "#FFECB3"
+      border-radius: 4
+    }
+  }
+}

@@ -1,0 +1,158 @@
+# Database Schema
+# FlavorMap ERD
+
+direction: right
+
+# Users
+user: User {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  email: varchar(255) {constraint: unique}
+  username: varchar(50) {constraint: unique}
+  password_hash: varchar(128)
+  display_name: varchar(100)
+  bio: text
+  avatar_url: varchar(500)
+  role: enum(user, owner, admin)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+# Restaurant
+restaurant: Restaurant {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  name: varchar(200)
+  slug: varchar(220) {constraint: unique}
+  description: text
+  phone: varchar(20)
+  website: varchar(500)
+  category_id: uuid {constraint: foreign_key}
+  owner_id: uuid {constraint: foreign_key}
+  address_line1: varchar(255)
+  address_line2: varchar(255)
+  city: varchar(100) {constraint: indexed}
+  district: varchar(100) {constraint: indexed}
+  postal_code: varchar(20)
+  latitude: decimal(10,8)
+  longitude: decimal(11,8)
+  price_range: enum(1, 2, 3)
+  average_rating: decimal(3,2)
+  review_count: int
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+# Category
+category: Category {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  name: varchar(50) {constraint: unique}
+  slug: varchar(50) {constraint: unique}
+  description: text
+  icon_url: varchar(500)
+  sort_order: int
+}
+
+# Review
+review: Review {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  restaurant_id: uuid {constraint: foreign_key}
+  user_id: uuid {constraint: foreign_key}
+  parent_id: uuid {constraint: foreign_key}
+  rating: int(1-5)
+  content: text
+  like_count: int
+  dislike_count: int
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+# ReviewLike
+review_like: ReviewLike {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  review_id: uuid {constraint: foreign_key}
+  user_id: uuid {constraint: foreign_key}
+  is_like: boolean
+  created_at: timestamp
+}
+
+# MenuItem
+menu_item: MenuItem {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  restaurant_id: uuid {constraint: foreign_key}
+  name: varchar(200)
+  description: text
+  price: decimal(10,2)
+  currency: varchar(3)
+  is_available: boolean
+  sort_order: int
+}
+
+# OpeningHour
+opening_hour: OpeningHour {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  restaurant_id: uuid {constraint: foreign_key}
+  day_of_week: int(0-6)
+  open_time: time
+  close_time: time
+  is_closed: boolean
+}
+
+# File
+file: File {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  object_key: varchar(500) {constraint: unique}
+  original_filename: varchar(255)
+  content_type: varchar(100)
+  size_bytes: int
+  width: int
+  height: int
+  uploaded_by: uuid {constraint: foreign_key}
+  created_at: timestamp
+}
+
+# RestaurantPhoto
+restaurant_photo: RestaurantPhoto {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  restaurant_id: uuid {constraint: foreign_key}
+  file_id: uuid {constraint: foreign_key}
+  caption: varchar(255)
+  is_primary: boolean
+  sort_order: int
+}
+
+# Favorite
+favorite: Favorite {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  user_id: uuid {constraint: foreign_key}
+  restaurant_id: uuid {constraint: foreign_key}
+  created_at: timestamp
+}
+
+# Relationships
+user ||--o{ restaurant: "owns"
+user ||--o{ review: "writes"
+user ||--o{ favorite: "has"
+user ||--o{ review_like: "gives"
+user ||--o{ file: "uploads"
+
+category ||--o{ restaurant: "classifies"
+
+restaurant ||--o{ review: "receives"
+restaurant ||--o{ menu_item: "has"
+restaurant ||--o{ opening_hour: "has"
+restaurant ||--o{ restaurant_photo: "has"
+restaurant ||--o{ favorite: "is_in"
+
+review ||--o{ review: "has_reply"
+review ||--o{ review_like: "receives"
+
+restaurant_photo }o--|| file: "uses"

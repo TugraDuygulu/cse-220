@@ -1,0 +1,290 @@
+# Component Architecture
+# Next.js Frontend Structure
+
+direction: right
+
+# App Router
+app: App Router {
+  shape: rectangle
+  style: {
+    fill: "#E3F2FD"
+    stroke: "#1976D2"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  layout: "Root Layout" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+  }
+
+  home: "Home Page\n/" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+  }
+
+  restaurants: "Restaurant Routes" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+
+    list: "/restaurants" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    detail: "/restaurants/[slug]" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    menu: "/restaurants/[slug]/menu" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    reviews: "/restaurants/[slug]/reviews" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+  }
+
+  search: "/search" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+  }
+
+  map: "/map" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+  }
+
+  profile: "Profile Routes" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+
+    me: "/profile" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    favorites: "/profile/favorites" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    my_reviews: "/profile/reviews" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+  }
+
+  auth: "Auth Routes" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+
+    login: "/auth/login" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+
+    register: "/auth/register" {
+      shape: rectangle
+      style: {
+        fill: "#E3F2FD"
+        border-radius: 4
+      }
+    }
+  }
+
+  owner: "Owner Dashboard\n/owner/dashboard" {
+    shape: rectangle
+    style: {
+      fill: "#BBDEFB"
+      border-radius: 4
+    }
+  }
+}
+
+# Components
+components: Components {
+  shape: rectangle
+  style: {
+    fill: "#C8E6C9"
+    stroke: "#388E3C"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  ui: "UI Components\n(Button, Card,\nInput, Modal,\nStarRating)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  restaurant: "Restaurant\n(RestaurantCard,\nRestaurantGrid,\nFilters)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  review: "Review\n(ReviewCard,\nReviewForm,\nReviewList)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  map: "Map\n(MapView,\nMapMarker,\nCluster)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+
+  layout: "Layout\n(Header,\nFooter,\nSidebar)" {
+    shape: rectangle
+    style: {
+      fill: "#E8F5E9"
+      border-radius: 4
+    }
+  }
+}
+
+# Services
+services: Services {
+  shape: rectangle
+  style: {
+    fill: "#FFF9C4"
+    stroke: "#F9A825"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  api: "API Client\n(axios + interceptors)" {
+    shape: rectangle
+    style: {
+      fill: "#FFFDE7"
+      border-radius: 4
+    }
+  }
+
+  auth: "Auth Service\n(token management)" {
+    shape: rectangle
+    style: {
+      fill: "#FFFDE7"
+      border-radius: 4
+    }
+  }
+
+  search: "Search Service" {
+    shape: rectangle
+    style: {
+      fill: "#FFFDE7"
+      border-radius: 4
+    }
+  }
+}
+
+# State
+state: Stores {
+  shape: rectangle
+  style: {
+    fill: "#F3E5F5"
+    stroke: "#7B1FA2"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  auth_store: "AuthStore\n(user, tokens)" {
+    shape: rectangle
+    style: {
+      fill: "#EDE7F6"
+      border-radius: 4
+    }
+  }
+
+  ui_store: "UIStore\n(filters, search)" {
+    shape: rectangle
+    style: {
+      fill: "#EDE7F6"
+      border-radius: 4
+    }
+  }
+}
+
+# Backend
+backend: Django API {
+  shape: rectangle
+  style: {
+    fill: "#FFECB3"
+    stroke: "#F57C00"
+    stroke-width: 2
+    border-radius: 8
+  }
+
+  endpoints: "REST Endpoints" {
+    shape: rectangle
+    style: {
+      fill: "#FFF8E1"
+      border-radius: 4
+    }
+  }
+}
+
+# Connections
+app -> components: "Renders"
+components -> services: "Uses"
+services -> state: "Reads/Writes"
+services.api -> backend: "REST API"
+services.auth -> state.auth_store: "Manages tokens"
