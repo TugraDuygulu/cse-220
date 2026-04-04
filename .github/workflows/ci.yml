@@ -24,11 +24,29 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: apps/api
+        run: poetry install --no-interaction --no-root
 
       - name: Lint frontend and UI libraries
         run: npx nx run-many -t lint -p web,ui-common,ui-module-map
 
       - name: Build web app
         run: npx nx build web
+
+      - name: Backend validations
+        run: |
+          npx nx run api:check
+          npx nx run api:makemigrations-check
+          npx nx run api:test
