@@ -11,6 +11,7 @@ from .errors import (
     UnauthorizedError,
     ValidationError,
 )
+from .dto import BaseDto, DtoRelation, dto_relation
 from .framework import (
     Controller,
     build_urlpatterns,
@@ -32,9 +33,11 @@ from .responses import (
 
 __all__ = [
     "ApiHttpError",
+    "BaseDto",
     "ConflictError",
     "Controller",
     "CreatedResponse",
+    "DtoRelation",
     "ErrorResponse",
     "ForbiddenError",
     "InternalServerError",
@@ -49,6 +52,7 @@ __all__ = [
     "build_urlpatterns",
     "controller",
     "delete",
+    "dto_relation",
     "get",
     "patch",
     "post",
