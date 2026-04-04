@@ -2,15 +2,18 @@
 
 import os
 
-import django
-from django.conf import settings
+import pytest
 
 from config.bootstrap import configure_workspace_paths
 
 configure_workspace_paths()
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
 
-if "testserver" not in settings.ALLOWED_HOSTS:
-    settings.ALLOWED_HOSTS = [*settings.ALLOWED_HOSTS, "testserver"]
+
+@pytest.fixture(autouse=True)
+def allow_testserver_host(settings):
+    """Ensure Django test client host is always allowed."""
+
+    if "testserver" not in settings.ALLOWED_HOSTS:
+        settings.ALLOWED_HOSTS = [*settings.ALLOWED_HOSTS, "testserver"]
