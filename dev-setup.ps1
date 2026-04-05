@@ -83,19 +83,19 @@ try {
         }
     }
 
-    $useLocalNx = Test-Path './nx.bat'
+    Install-Npm-Deps
+
+    $useLocalNx = (Test-Path './nx.bat') -or (Test-Path './.nx/nxw.js')
 
     function Invoke-Nx {
         param([string[]] $Arguments)
-        if ($useLocalNx) {
+        if ($useLocalNx -and (Test-Path './nx.bat')) {
             & './nx.bat' @Arguments
         }
         else {
             & npx nx @Arguments
         }
     }
-
-    Install-Npm-Deps
 
     Write-Step 2 5 "Installing API-HTTP Python dependencies..."
     Invoke-Nx @('run', 'api-http:install')
@@ -114,8 +114,11 @@ try {
     Write-Host "Setup completed successfully!" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
-    $runCmd = if ($useLocalNx) { "./nx.bat run api:dev" } else { "npx nx run api:dev" }
-    Write-Host "Start API server: $runCmd" -ForegroundColor Cyan
+    if ($useLocalNx -and (Test-Path './nx.bat')) {
+        Write-Host "Start API server: .\nx.bat run api:dev" -ForegroundColor Cyan
+    } else {
+        Write-Host "Start API server: npx nx run api:dev" -ForegroundColor Cyan
+    }
 }
 catch {
     Write-Host ""
