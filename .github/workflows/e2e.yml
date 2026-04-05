@@ -57,7 +57,7 @@ jobs:
 
             const failures = []
             for (const checkName of required) {
-              const match = checks.find((c) => c.name === checkName)
+              const match = checks.find((c) => c.name.inlcudes(checkName))
               if (!match || match.conclusion !== 'success') {
                 failures.push(checkName)
               }
