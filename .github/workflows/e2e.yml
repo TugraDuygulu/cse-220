@@ -56,8 +56,11 @@ jobs:
             })
 
             const failures = []
+            console.log('Available checks:', JSON.stringify(checks.map(c => ({ name: c.name, conclusion: c.conclusion })), null, 2))
+
             for (const checkName of required) {
               const match = checks.find((c) => c.name.includes(checkName))
+              console.log(`Checking for "${checkName}":`, match ? `found (${match.conclusion})` : 'not found')
               if (!match || match.conclusion !== 'success') {
                 failures.push(checkName)
               }
