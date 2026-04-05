@@ -109,15 +109,6 @@ class RestaurantsController(Controller):
     @delete("<slug:slug>/")
     def restaurant_delete(self, slug):
         """Scaffold for admin-only restaurant deletion."""
-        # TODO(implementation guide):
-        # 1) Require authenticated user with the same auth check pattern.
-        # 2) Admin role check.
-        #    - from users.models import UserRole
-        #    - if user.role != UserRole.ADMIN: return self.error(status=403, code="forbidden", ...)
-        # 3) Load by slug and return 404 if not found.
-        # 4) Delete model and return api_http no-content helper:
-        #    - restaurant.delete()
-        #    - return self.no_content()
         user = getattr(self.request, "user", None)
         if user is None or not user.is_authenticated:
             return self.error(

@@ -116,9 +116,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://localhost:3001",
-    cast=lambda v: [s.strip() for s in v.split(",")],
-)
+is_debug = config("DEBUG", default=None)
+if is_debug is None:
+    is_debug = config("DJANGO_DEBUG", default=True, cast=bool)
+else:
+    is_debug = config("DEBUG", default=False, cast=bool)
+
+if is_debug:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = config(
+        "CORS_ALLOWED_ORIGINS",
+        default="http://localhost:3000,http://localhost:3001,http://localhost:8020",
+        cast=lambda v: [s.strip() for s in v.split(",")],
+    )
 CORS_ALLOW_CREDENTIALS = True

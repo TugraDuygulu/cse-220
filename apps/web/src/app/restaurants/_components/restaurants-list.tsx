@@ -3,9 +3,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Button,
   Empty,
   EmptyDescription,
@@ -14,7 +11,7 @@ import {
   Input,
   Skeleton,
 } from 'ui-common';
-import { RiAlertLine, RiSearchLine } from '@remixicon/react';
+import { RiSearchLine } from '@remixicon/react';
 
 import {
   buildRestaurantsUrl,
@@ -23,6 +20,7 @@ import {
   type Restaurant,
 } from '../../lib/restaurants';
 import { RestaurantCard } from './restaurant-card';
+import { ErrorCallout } from '@/components/callouts';
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -178,25 +176,24 @@ export function RestaurantsList({
 
         <div className="flex items-center gap-2">
           <Button type="submit">Search</Button>
-          {query ? (
+          {query && (
             <Button type="button" variant="outline" onClick={handleClearSearch}>
               Clear
             </Button>
-          ) : null}
+          )}
         </div>
       </form>
 
-      {localFilterNotice ? (
+      {localFilterNotice && (
         <p className="text-xs text-muted-foreground">{localFilterNotice}</p>
-      ) : null}
+      )}
 
-      {errorMessage ? (
-        <Alert>
-          <RiAlertLine className="size-4" />
-          <AlertTitle>Unable to load restaurants</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-      ) : null}
+      {errorMessage && (
+        <ErrorCallout
+          message="Unable to load restaurants"
+          details={errorMessage}
+        />
+      )}
 
       {isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
