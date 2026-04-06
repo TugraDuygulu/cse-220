@@ -6,6 +6,7 @@ from typing import Any, Callable
 from django.http import HttpResponse
 
 from .decorators import use
+from .responses import ErrorResponse
 
 
 class UserIsAuthenticated:
@@ -15,16 +16,16 @@ class UserIsAuthenticated:
         self, func: Callable[..., HttpResponse]
     ) -> Callable[..., HttpResponse]:
         @wraps(func)
-        def wrapper(self: Any, *args: Any, **kwargs: Any) -> HttpResponse:
-            user = getattr(self.request, "user", None)
+        def wrapper(request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+            user = getattr(request, "user", None)
             if user is None or not user.is_authenticated:
-                return self.error(
+                return ErrorResponse(
                     status=401,
-                    code="auth_required",
+                    error_code="auth_required",
                     message="Authentication is required.",
                 )
 
-            return func(self, *args, **kwargs)
+            return func(request, *args, **kwargs)
 
         return wrapper
 
@@ -39,23 +40,23 @@ class UserRoleRequired:
         self, func: Callable[..., HttpResponse]
     ) -> Callable[..., HttpResponse]:
         @wraps(func)
-        def wrapper(self: Any, *args: Any, **kwargs: Any) -> HttpResponse:
-            user = getattr(self.request, "user", None)
+        def wrapper(request: Any, *args: Any, **kwargs: Any) -> HttpResponse:
+            user = getattr(request, "user", None)
             if user is None or not user.is_authenticated:
-                return self.error(
+                return ErrorResponse(
                     status=401,
-                    code="auth_required",
+                    error_code="auth_required",
                     message="Authentication is required.",
                 )
 
             if user.role != self.role:
-                return self.error(
+                return ErrorResponse(
                     status=403,
-                    code="forbidden",
+                    error_code="forbidden",
                     message="You do not have permission to perform this action.",
                 )
 
-            return func(self, *args, **kwargs)
+            return func(request, *args, **kwargs)
 
         return wrapper
 

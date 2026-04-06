@@ -12,7 +12,16 @@ def pytest_configure() -> None:
             ALLOWED_HOSTS=["*"],
             ROOT_URLCONF=__name__,
             MIDDLEWARE=[],
-            INSTALLED_APPS=[],
+            INSTALLED_APPS=[
+                "django.contrib.contenttypes",
+                "django.contrib.auth",
+            ],
             DEFAULT_CHARSET="utf-8",
+            DATABASES={
+                "default": {
+                    "ENGINE": "django.db.backends.sqlite3",
+                    "NAME": ":memory:",
+                }
+            },
         )
     django.setup()
