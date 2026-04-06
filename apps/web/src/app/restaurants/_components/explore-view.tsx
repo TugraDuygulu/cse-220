@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 import { useRestaurantData } from '../_hooks/use-restaurant-data';
@@ -24,7 +24,6 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
 
   const {
     query,
-    page,
     restaurants,
     pagination,
     errorMessage,
@@ -40,7 +39,6 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
     toggleFilters,
     clearAllFilters,
     setHoveredId,
-    toggleListMobile,
   } = useExploreStore(
     (
       state: Pick<
@@ -51,7 +49,6 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
         | 'toggleFilters'
         | 'clearAllFilters'
         | 'setHoveredId'
-        | 'toggleListMobile'
       >,
     ) => state,
   );
@@ -97,15 +94,6 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
   );
 
   const isLoading = useExploreStore((s) => s.isLoading);
-  const displayLoading = useMemo(
-    () => isLoading && !errorMessage,
-    [isLoading, errorMessage],
-  );
-
-  const isEmpty = useMemo(
-    () => !isLoading && !errorMessage && restaurants.length === 0,
-    [isLoading, errorMessage, restaurants.length],
-  );
 
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background">

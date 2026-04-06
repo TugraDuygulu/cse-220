@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
 import { Button, Input } from 'ui-common';
 import { RiCloseLine, RiFilter3Line, RiSearchLine } from '@remixicon/react';
 
@@ -24,8 +23,6 @@ export function SearchBar({
   showFilters,
   onToggleFilters,
 }: SearchBarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [inputValue, setInputValue] = useState(value);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

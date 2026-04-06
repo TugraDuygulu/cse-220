@@ -1,7 +1,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { useMemo } from 'react';
 
 export type RestaurantCategory = {
   id?: string;
@@ -112,10 +111,10 @@ export const useExploreFilters = () => useExploreStore((s) => s.filters);
 export const useExploreLoading = () => useExploreStore((s) => s.isLoading);
 export const useExploreError = () => useExploreStore((s) => s.errorMessage);
 export const useExplorePagination = () => useExploreStore((s) => s.pagination);
-const EXPLORE_UI_SELECTOR = (s: ExploreViewState) => ({
-  hoveredId: s.hoveredId,
-  showFilters: s.showFilters,
-  showListMobile: s.showListMobile,
-});
 
-export const useExploreUI = () => useExploreStore(EXPLORE_UI_SELECTOR);
+export const useExploreUI = () => {
+  const hoveredId = useExploreStore((s) => s.hoveredId);
+  const showFilters = useExploreStore((s) => s.showFilters);
+  const showListMobile = useExploreStore((s) => s.showListMobile);
+  return { hoveredId, showFilters, showListMobile };
+};
