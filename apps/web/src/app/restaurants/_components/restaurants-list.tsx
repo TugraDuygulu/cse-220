@@ -20,7 +20,7 @@ import {
   type Restaurant,
 } from '../../lib/restaurants';
 import { RestaurantCard } from './restaurant-card';
-import { ErrorCallout } from '@/components/callouts';
+import { ErrorCallout } from '../../../components/callouts';
 
 const DEFAULT_PAGE_SIZE = 12;
 

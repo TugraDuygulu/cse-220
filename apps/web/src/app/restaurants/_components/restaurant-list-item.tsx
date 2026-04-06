@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge, Button } from 'ui-common';
+import { Badge } from 'ui-common';
 import {
   RiMapPinLine,
   RiRouteLine,
