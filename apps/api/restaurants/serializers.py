@@ -83,7 +83,7 @@ class MenuItemWriteSerializer(serializers.ModelSerializer):
 class RestaurantSerializer(DynamicFieldsModelSerializer):
     """Restaurant read serializer."""
 
-    category = CategorySerializer(read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
     logo_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -95,7 +95,7 @@ class RestaurantSerializer(DynamicFieldsModelSerializer):
             "description",
             "phone",
             "website",
-            "category",
+            "categories",
             "logo",
             "logo_url",
             "address_line1",
@@ -121,9 +121,10 @@ class RestaurantSerializer(DynamicFieldsModelSerializer):
 class RestaurantWriteSerializer(serializers.ModelSerializer):
     """Restaurant create serializer."""
 
-    category_id = serializers.PrimaryKeyRelatedField(
+    category_ids = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
-        source="category",
+        source="categories",
+        many=True,
         required=True,
     )
 
@@ -134,7 +135,7 @@ class RestaurantWriteSerializer(serializers.ModelSerializer):
             "description",
             "phone",
             "website",
-            "category_id",
+            "category_ids",
             "logo",
             "address_line1",
             "address_line2",
@@ -146,13 +147,20 @@ class RestaurantWriteSerializer(serializers.ModelSerializer):
             "price_range",
         ]
 
+    def create(self, validated_data):
+        categories = validated_data.pop("categories", [])
+        restaurant = Restaurant.objects.create(**validated_data)
+        if categories:
+            restaurant.categories.set(categories)
+        return restaurant
 
 class RestaurantUpdateSerializer(RestaurantWriteSerializer):
     """Partial update serializer for restaurant edits."""
 
-    category_id = serializers.PrimaryKeyRelatedField(
+    category_ids = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
-        source="category",
+        source="categories",
+        many=True,
         required=False,
     )
 
@@ -172,3 +180,12 @@ class RestaurantUpdateSerializer(RestaurantWriteSerializer):
             "price_range": {"required": False},
             "logo": {"required": False},
         }
+    
+    def update(self, instance, validated_data):
+        categories = validated_data.pop("categories", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if categories is not None:
+            instance.categories.set(categories)
+        return instance

@@ -25,14 +25,14 @@ class RestaurantAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
-        "category",
         "city",
         "price_range",
         "average_rating",
         "review_count",
         "created_at",
     )
-    list_filter = ("category", "city", "price_range", "created_at")
+    list_filter = ("categories", "city", "price_range", "created_at")
+    filter_horizontal = ("categories",)
     search_fields = ("name", "slug", "city", "district")
     ordering = ("-created_at",)
 

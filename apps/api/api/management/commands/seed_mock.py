@@ -227,8 +227,7 @@ class Command(BaseCommand):
                 defaults={
                     "name": name,
                     "description": description,
-                    "icon_url": "",
-                    "sort_order": index,
+                    "sort_order": index
                 },
             )
             if created:
@@ -266,7 +265,6 @@ class Command(BaseCommand):
                     ),
                     "phone": f"+90-555-010-{index:03d}",
                     "website": f"https://{slug}.flavormap.local",
-                    "category": category,
                     "owner": owner,
                     "address_line1": f"{100 + index} Demo Avenue",
                     "address_line2": "",
@@ -278,7 +276,7 @@ class Command(BaseCommand):
                     "price_range": price_ranges[(index - 1) % len(price_ranges)],
                 },
             )
-
+            restaurant.categories.set([category])
             if created:
                 created_count += 1
             else:
@@ -296,6 +294,7 @@ class Command(BaseCommand):
         created_total = 0
 
         for restaurant in restaurants:
+            restaurant_category = restaurant.categories.first()
             MenuItem.objects.filter(
                 restaurant=restaurant,
                 name__startswith="Mock ",
@@ -320,6 +319,7 @@ class Command(BaseCommand):
                     currency="EUR",
                     is_available=True,
                     sort_order=sort_order,
+                    category=restaurant_category,
                 )
                 created_total += 1
 

@@ -37,16 +37,17 @@ def _create_restaurant(owner=None):
     category = _create_category("Review Test")
     if owner is None:
         owner = _create_user(role=UserRole.OWNER)
-    return Restaurant.objects.create(
+    restaurant = Restaurant.objects.create(
         name=f"Review Test Place {uuid.uuid4().hex[:8]}",
         description="A place for review testing",
-        category=category,
         owner=owner,
         address_line1="Street 1",
         city="Istanbul",
         district="Besiktas",
         price_range="2",
     )
+    restaurant.categories.set([category])
+    return restaurant
 
 
 def _create_review(

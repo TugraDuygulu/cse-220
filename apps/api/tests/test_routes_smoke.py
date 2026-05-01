@@ -56,7 +56,6 @@ def test_restaurants_list_supports_pagination_and_include_fields():
     restaurant = Restaurant.objects.create(
         name=f"Bosphorus {suffix}",
         description="Desc",
-        category=category,
         owner=owner,
         address_line1="A",
         city="Istanbul",
@@ -64,6 +63,7 @@ def test_restaurants_list_supports_pagination_and_include_fields():
         average_rating="5.00",
         review_count=999999,
     )
+    restaurant.categories.set([category])
 
     try:
         response = client.get(
@@ -106,20 +106,23 @@ def test_restaurants_list_supports_explicit_relation_expansion():
     restaurant = Restaurant.objects.create(
         name=restaurant_name,
         description="Desc",
-        category=category,
         owner=owner,
         address_line1="A",
         city="Istanbul",
         district="Kadikoy",
     )
+    restaurant.categories.set([category])
 
     try:
-        response = client.get("/api/v1/restaurants/?include=name&with=category&page_size=10")
+        response = client.get(
+            "/api/v1/restaurants/?include=name&with=categories&page_size=10"
+        )
 
         assert response.status_code == 200
         matching = [item for item in response.json()["data"] if item.get("name") == restaurant_name]
         assert matching
-        assert matching[0]["category"]["name"] == category.name
+        assert len(matching[0]["categories"]) == 1
+        assert matching[0]["categories"][0]["name"] == category.name
     finally:
         restaurant.delete()
         category.delete()
@@ -145,7 +148,6 @@ def test_restaurants_list_does_not_expose_owner_fields():
     restaurant = Restaurant.objects.create(
         name=restaurant_name,
         description="Desc",
-        category=category,
         owner=owner,
         address_line1="A",
         city="Istanbul",
@@ -153,6 +155,7 @@ def test_restaurants_list_does_not_expose_owner_fields():
         average_rating="5.00",
         review_count=999999,
     )
+    restaurant.categories.set([category])
 
     try:
         default_response = client.get("/api/v1/restaurants/?page_size=5")

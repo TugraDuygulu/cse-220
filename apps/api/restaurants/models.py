@@ -65,10 +65,10 @@ class Restaurant(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     website = models.URLField(blank=True)
 
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         Category,
-        on_delete=models.PROTECT,
         related_name="restaurants",
+        blank=True,
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

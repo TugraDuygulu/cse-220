@@ -7,16 +7,16 @@ class RestaurantRepository:
     """Repository for restaurant persistence and queries."""
 
     def list_restaurants(self):
-        return Restaurant.objects.select_related("category").all()
+        return Restaurant.objects.prefetch_related("categories").all()
 
     def list_categories(self):
         return Category.objects.all()
 
     def list_by_owner(self, owner):
-        return Restaurant.objects.select_related("category").filter(owner=owner)
+        return Restaurant.objects.prefetch_related("categories").filter(owner=owner)
 
     def get_by_slug(self, slug: str):
-        return Restaurant.objects.select_related("category", "owner").filter(slug=slug).first()
+        return Restaurant.objects.select_related("owner").prefetch_related("categories").filter(slug=slug).first()
 
     def create(self, *, owner, data: dict) -> Restaurant:
         return Restaurant.objects.create(owner=owner, **data)
