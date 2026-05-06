@@ -33,8 +33,8 @@ class RestaurantsController(APIView):
     @extend_schema(
         summary="List restaurants",
         description=(
-            "Retrieve a paginated list of restaurants. Supports field filtering and "
-            "relation expansion through query parameters."
+            "Retrieve a paginated list of restaurants. Supports field filtering, "
+            "advanced restaurant filters, and relation expansion through query parameters."
         ),
         parameters=[
             OpenApiParameter(
@@ -62,12 +62,44 @@ class RestaurantsController(APIView):
                 OpenApiTypes.STR,
                 description="Comma-separated list of fields to exclude from the response.",
             ),
+            OpenApiParameter(
+                "category",
+                OpenApiTypes.STR,
+                description="Filter restaurants by category slug.",
+            ),
+            OpenApiParameter(
+                "city",
+                OpenApiTypes.STR,
+                description="Filter restaurants by city. Case-insensitive.",
+            ),
+            OpenApiParameter(
+                "price",
+                OpenApiTypes.STR,
+                description="Filter restaurants by price range: 1, 2, or 3.",
+            ),
+            OpenApiParameter(
+                "price_range",
+                OpenApiTypes.STR,
+                description="Alias for price. Filter restaurants by price range: 1, 2, or 3.",
+            ),
+            OpenApiParameter(
+                "min_rating",
+                OpenApiTypes.NUMBER,
+                description="Filter restaurants with average rating greater than or equal to this value.",
+            ),
         ],
         responses={200: RestaurantSerializer(many=True)},
         tags=["Restaurants"],
     )
     def get(self, request):
-        queryset = self.get_service().list_restaurants()
+        filters = {
+            "category": request.query_params.get("category"),
+            "city": request.query_params.get("city"),
+            "price": request.query_params.get("price"),
+            "price_range": request.query_params.get("price_range"),
+            "min_rating": request.query_params.get("min_rating"),
+        }
+        queryset = self.get_service().list_restaurants(filters)
         page_obj, pagination = paginate_queryset(queryset, request)
 
         include_fields = parse_csv_param(request.query_params.get("include"))

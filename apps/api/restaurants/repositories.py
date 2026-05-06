@@ -6,8 +6,31 @@ from restaurants.models import Category, MenuItem, OpeningHour, Restaurant
 class RestaurantRepository:
     """Repository for restaurant persistence and queries."""
 
-    def list_restaurants(self):
-        return Restaurant.objects.prefetch_related("categories", "opening_hours").all()
+    def list_restaurants(self, filters: dict | None = None):
+        queryset = Restaurant.objects.prefetch_related("categories", "opening_hours").all()
+        filters = filters or {}
+
+        category = filters.get("category")
+        city = filters.get("city")
+        price_range = filters.get("price_range")
+        min_rating = filters.get("min_rating")
+
+        if category:
+            queryset = queryset.filter(categories__slug=category)
+
+        if city:
+            queryset = queryset.filter(city__iexact=city)
+
+        if price_range:
+            queryset = queryset.filter(price_range=price_range)
+
+        if min_rating is not None:
+            queryset = queryset.filter(average_rating__gte=min_rating)
+
+        if category:
+            queryset = queryset.distinct()
+
+        return queryset
 
     def list_categories(self):
         return Category.objects.all()
