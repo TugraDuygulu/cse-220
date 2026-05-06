@@ -1,6 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeReviewThreads } from './reviews';
+const { sessionRequestMock } = vi.hoisted(() => ({
+  sessionRequestMock: vi.fn(),
+}));
+
+vi.mock('@/app/(auth)/auth/_lib/auth-api', () => ({
+  sessionRequest: sessionRequestMock,
+}));
+
+import {
+  normalizeReviewThreads,
+  reactToReview,
+  submitReview,
+} from './reviews';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  sessionRequestMock.mockReset();
+});
 
 describe('review thread normalization', () => {
   it('normalizes empty review payloads with pagination defaults', () => {
@@ -116,5 +133,95 @@ describe('review thread normalization', () => {
       has_next: false,
       has_previous: false,
     });
+  });
+
+  it('returns the created review from restaurant-scoped review submission', async () => {
+    sessionRequestMock.mockResolvedValueOnce({
+      id: 'review-3',
+      user: { id: 'user-3', username: 'mira' },
+      rating: 4,
+      content: 'Warm staff and a very good dinner.',
+    });
+
+    const result = await submitReview(
+      'ada-bistro',
+      4,
+      'Warm staff and a very good dinner.',
+    );
+
+    expect(result).toMatchObject({
+      success: true,
+        review: {
+          id: 'review-3',
+          rating: 4,
+          user: { display_name: 'mira' },
+        },
+      });
+    expect(sessionRequestMock).toHaveBeenCalledWith(
+      'http://localhost:8020/api/v1/restaurants/ada-bistro/reviews/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          rating: 4,
+          content: 'Warm staff and a very good dinner.',
+        }),
+      }),
+    );
+  });
+
+  it('can submit one-level comments through the same restaurant-scoped contract', async () => {
+    sessionRequestMock.mockResolvedValueOnce({
+      id: 'reply-1',
+      parent_id: 'review-1',
+      user: { id: 'owner-1', username: 'owner' },
+      rating: 5,
+      content: 'Thanks for visiting.',
+      is_business_answer: true,
+    });
+
+    const result = await submitReview(
+      'ada-bistro',
+      5,
+      'Thanks for visiting.',
+      'review-1',
+    );
+
+    expect(result).toMatchObject({
+      success: true,
+        review: {
+          id: 'reply-1',
+          parent_id: 'review-1',
+          is_business_answer: true,
+        },
+      });
+    expect(sessionRequestMock).toHaveBeenCalledWith(
+      'http://localhost:8020/api/v1/restaurants/ada-bistro/reviews/',
+      expect.objectContaining({
+        body: JSON.stringify({
+          rating: 5,
+          content: 'Thanks for visiting.',
+          parent_id: 'review-1',
+        }),
+      }),
+    );
+  });
+
+  it('posts review reactions to the review-scoped reaction endpoint', async () => {
+    sessionRequestMock.mockResolvedValueOnce({
+      like_count: 2,
+      dislike_count: 0,
+      user_reaction: 'like',
+    });
+
+    await expect(reactToReview('review-1', 'like')).resolves.toEqual({
+      success: true,
+      like_count: 2,
+      dislike_count: 0,
+      user_reaction: 'like',
+    });
+    expect(sessionRequestMock).toHaveBeenCalledWith(
+      'http://localhost:8020/api/v1/reviews/review-1/like/',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });

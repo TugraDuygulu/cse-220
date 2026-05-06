@@ -14,7 +14,7 @@ import {
   RiRouteLine,
 } from '@remixicon/react';
 
-import type { Restaurant } from '../../lib/restaurants';
+import type { Restaurant } from '@/lib/restaurants';
 
 type ExploreMapPanelProps = {
   restaurants: Restaurant[];

@@ -9,7 +9,7 @@ import {
   EmptyTitle,
   Skeleton,
 } from 'ui-common';
-import type { Restaurant, PaginationMeta } from '../../lib/restaurants';
+import type { Restaurant, PaginationMeta } from '@/lib/restaurants';
 import { ErrorCallout } from '../../../components/callouts';
 import { RestaurantListItem } from './restaurant-list-item';
 
@@ -20,6 +20,7 @@ interface RestaurantListProps {
   isLoading: boolean;
   hoveredId: string | null;
   onHover: (id: string | null) => void;
+  onSelect: (restaurant: Restaurant) => void;
   onPageChange: (page: number) => void;
 }
 
@@ -30,6 +31,7 @@ export function RestaurantList({
   isLoading,
   hoveredId,
   onHover,
+  onSelect,
   onPageChange,
 }: RestaurantListProps) {
   const isEmpty = useMemo(
@@ -99,6 +101,7 @@ export function RestaurantList({
               isHovered={hoveredId === restaurant.id}
               onHover={() => onHover(restaurant.id)}
               onLeave={() => onHover(null)}
+              onSelect={() => onSelect(restaurant)}
             />
           ))}
         </div>

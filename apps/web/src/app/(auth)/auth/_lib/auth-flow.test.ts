@@ -8,7 +8,7 @@ import {
   roleForAuthVariant,
   usernameFromEmail,
 } from './auth-flow';
-import { getApiBaseUrl } from '../../lib/restaurants';
+import { getApiBaseUrl } from '@/lib/restaurants';
 
 describe('auth-flow utilities', () => {
   it('routes owners to the restaurant dashboard', () => {

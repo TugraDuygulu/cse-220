@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Badge } from 'ui-common';
 import {
   RiMapPinLine,
@@ -13,13 +12,14 @@ import {
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   type Restaurant,
-} from '../../lib/restaurants';
+} from '@/lib/restaurants';
 
 interface RestaurantListItemProps {
   restaurant: Restaurant;
   isHovered: boolean;
   onHover: () => void;
   onLeave: () => void;
+  onSelect: () => void;
 }
 
 export function RestaurantListItem({
@@ -27,17 +27,19 @@ export function RestaurantListItem({
   isHovered,
   onHover,
   onLeave,
+  onSelect,
 }: RestaurantListItemProps) {
   const imageUrl = getRestaurantCoverImage(restaurant.slug);
   const distanceKm = getRestaurantDistanceKm(restaurant.slug);
   const isOpen = getRestaurantIsOpen(restaurant.slug);
 
   return (
-    <Link
-      href={`/restaurants/${restaurant.slug}`}
+    <button
+      type="button"
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
-      className={`group block overflow-hidden rounded-xl border transition-all duration-200 ${
+      onClick={onSelect}
+      className={`group block w-full overflow-hidden rounded-xl border text-left transition-all duration-200 ${
         isHovered
           ? 'border-primary/50 bg-card shadow-md ring-1 ring-primary/10'
           : 'border-border/60 bg-card/80 hover:border-border hover:shadow-sm'
@@ -101,6 +103,6 @@ export function RestaurantListItem({
           </div>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }

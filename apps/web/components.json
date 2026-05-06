@@ -12,6 +12,8 @@
   },
   "iconLibrary": "remixicon",
   "rtl": false,
+  "menuColor": "inverted-translucent",
+  "menuAccent": "subtle",
   "aliases": {
     "components": "ui-common/components",
     "utils": "ui-common/lib/utils",
@@ -19,7 +21,7 @@
     "lib": "ui-common/lib",
     "hooks": "ui-common/hooks"
   },
-  "menuColor": "inverted-translucent",
-  "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@mapcn": "https://mapcn.dev/r/{name}.json"
+  }
 }

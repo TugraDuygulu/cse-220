@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, Card, CardContent, Textarea } from 'ui-common';
 import {
@@ -11,8 +12,30 @@ import {
   RiThumbUpLine,
 } from '@remixicon/react';
 
-import type { Review } from '../../lib/reviews';
-import { submitReview } from '../../lib/reviews';
+import type { Review } from '@/lib/reviews';
+import {
+  fetchRestaurantReviews,
+  reactToReview,
+  submitReview,
+  type ReviewReaction,
+} from '@/lib/reviews';
+
+const REVIEW_PAGE_SIZE = 10;
+
+function formatError(message: string | undefined, fallback: string): string {
+  if (!message) return fallback;
+
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes('authentication') ||
+    normalized.includes('sign in') ||
+    normalized.includes('login')
+  ) {
+    return 'Sign in to post reviews, comments, and reactions.';
+  }
+
+  return message;
+}
 
 type ReviewSectionProps = {
   restaurantSlug: string;
@@ -28,6 +51,11 @@ export function ReviewSection({
   totalReviews,
 }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [reviewTotal, setReviewTotal] = useState(totalReviews);
+  const [hasMore, setHasMore] = useState(initialReviews.length < totalReviews);
+  const [nextPage, setNextPage] = useState(2);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(0);
@@ -47,6 +75,28 @@ export function ReviewSection({
           ? 'Good overall'
           : 'Excellent experience';
 
+  async function loadMoreReviews() {
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+
+    try {
+      const response = await fetchRestaurantReviews(
+        restaurantSlug,
+        nextPage,
+        REVIEW_PAGE_SIZE,
+      );
+
+      setReviews((current) => [...current, ...response.data]);
+      setReviewTotal(response.pagination.total);
+      setHasMore(response.pagination.has_next);
+      setNextPage(response.pagination.page + 1);
+    } catch {
+      setLoadMoreError('Could not load more reviews right now.');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -65,23 +115,15 @@ export function ReviewSection({
 
     if (result.success) {
       setSubmitSuccess(true);
-      setReviews((prev) => [
-        {
-          id: `local-${Date.now()}`,
-          user: { id: 'you', display_name: 'You', username: 'you' },
-          rating,
-          content: comment.trim(),
-          like_count: 0,
-          dislike_count: 0,
-          created_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      if (result.review) {
+      setReviews((prev) => [result.review as Review, ...prev]);
+      setReviewTotal((current) => current + 1);
+      }
       setRating(0);
       setComment('');
       setShowForm(false);
     } else {
-      setSubmitError(result.error || 'Failed to submit review.');
+      setSubmitError(formatError(result.error, 'Failed to submit review.'));
     }
 
     setIsSubmitting(false);
@@ -102,7 +144,7 @@ export function ReviewSection({
         <div>
           <h2 className="text-xl font-semibold">Reviews</h2>
           <p className="text-sm text-muted-foreground">
-            {totalReviews} review{totalReviews !== 1 ? 's' : ''} from diners
+            {reviewTotal} review{reviewTotal !== 1 ? 's' : ''} from diners
           </p>
         </div>
         {!showForm && (
@@ -123,6 +165,7 @@ export function ReviewSection({
               variant="ghost"
               size="sm"
               onClick={() => setSubmitSuccess(false)}
+              aria-label="Dismiss success message"
             >
               <RiCloseLine className="size-4" />
             </Button>
@@ -143,6 +186,7 @@ export function ReviewSection({
                       <button
                         key={score}
                         type="button"
+                        aria-label={`Rate ${score} star${score === 1 ? '' : 's'}`}
                         onClick={() => setRating(score)}
                         className="rounded p-0.5 transition-colors hover:text-amber-500"
                       >
@@ -174,7 +218,14 @@ export function ReviewSection({
               )}
 
               {submitError && (
-                <p className="text-xs text-destructive">{submitError}</p>
+                <div className="space-y-2">
+                  <p className="text-xs text-destructive">{submitError}</p>
+                  {submitError.startsWith('Sign in') && (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/auth/sign-in">Sign in</Link>
+                    </Button>
+                  )}
+                </div>
               )}
 
               <div className="flex items-center justify-end gap-2">
@@ -202,8 +253,37 @@ export function ReviewSection({
       {reviews.length ? (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+            <ReviewCard
+              key={review.id}
+              review={review}
+              restaurantSlug={restaurantSlug}
+              onReply={(parentId, reply) => {
+                setReviews((prev) =>
+                  prev.map((item) =>
+                    item.id === parentId
+                      ? { ...item, replies: [...(item.replies ?? []), reply] }
+                      : item,
+                  ),
+                );
+              }}
+            />
           ))}
+          {hasMore && (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => void loadMoreReviews()}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? 'Loading more...' : 'Load more reviews'}
+              </Button>
+              {loadMoreError && (
+                <p className="text-xs text-destructive">{loadMoreError}</p>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <Card className="border-dashed">
@@ -211,6 +291,9 @@ export function ReviewSection({
             <p className="text-sm text-muted-foreground">
               No reviews yet. Be the first to share your experience!
             </p>
+            <Button className="mt-4" onClick={() => setShowForm(true)}>
+              Write the first review
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -218,12 +301,72 @@ export function ReviewSection({
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
+function ReviewCard({
+  review,
+  restaurantSlug,
+  onReply,
+}: {
+  review: Review;
+  restaurantSlug: string;
+  onReply: (parentId: string, reply: Review) => void;
+}) {
+  const [reaction, setReaction] = useState<ReviewReaction | null>(null);
+  const [likeCount, setLikeCount] = useState(review.like_count);
+  const [dislikeCount, setDislikeCount] = useState(review.dislike_count);
+  const [reactionError, setReactionError] = useState<string | null>(null);
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const [isReplying, setIsReplying] = useState(false);
 
   const date = new Date(review.created_at);
   const timeAgo = getTimeAgo(date);
+
+  async function handleReaction(nextReaction: ReviewReaction) {
+    setReactionError(null);
+
+    const previousReaction = reaction;
+    const remove = previousReaction === nextReaction;
+    const result = await reactToReview(review.id, nextReaction, remove);
+
+    if (!result.success) {
+      setReactionError(formatError(result.error, 'Could not update reaction.'));
+      return;
+    }
+
+    setReaction(result.user_reaction ?? null);
+    setLikeCount(result.like_count ?? likeCount);
+    setDislikeCount(result.dislike_count ?? dislikeCount);
+  }
+
+  async function handleReplySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const content = replyContent.trim();
+    if (content.length < 3) {
+      setReplyError('Please write a reply before submitting.');
+      return;
+    }
+
+    setIsReplying(true);
+    setReplyError(null);
+    const result = await submitReview(
+      restaurantSlug,
+      review.rating,
+      content,
+      review.id,
+    );
+
+    if (result.success && result.review) {
+      onReply(review.id, result.review);
+      setReplyContent('');
+      setShowReplyForm(false);
+    } else {
+      setReplyError(formatError(result.error, 'Failed to post reply.'));
+    }
+
+    setIsReplying(false);
+  }
 
   return (
     <Card>
@@ -240,6 +383,11 @@ function ReviewCard({ review }: { review: Review }) {
                 </p>
                 <p className="text-xs text-muted-foreground">{timeAgo}</p>
               </div>
+              {review.is_business_answer && (
+                <Badge variant="outline" className="text-[10px]">
+                  Official business answer
+                </Badge>
+              )}
             </div>
 
             <div className="flex items-center gap-1">
@@ -263,43 +411,100 @@ function ReviewCard({ review }: { review: Review }) {
         <div className="mt-3 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              setLiked(!liked);
-              if (disliked) setDisliked(false);
-            }}
+            aria-label={`Like review from ${review.user.display_name}`}
+            onClick={() => void handleReaction('like')}
             className={`inline-flex items-center gap-1 text-xs transition-colors ${
-              liked
+              reaction === 'like'
                 ? 'text-green-600'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <RiThumbUpLine className="size-4" />
-            {review.like_count + (liked ? 1 : 0)}
+            {likeCount}
           </button>
           <button
             type="button"
-            onClick={() => {
-              setDisliked(!disliked);
-              if (liked) setLiked(false);
-            }}
+            aria-label={`Dislike review from ${review.user.display_name}`}
+            onClick={() => void handleReaction('dislike')}
             className={`inline-flex items-center gap-1 text-xs transition-colors ${
-              disliked
+              reaction === 'dislike'
                 ? 'text-red-600'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <RiThumbDownLine className="size-4" />
-            {review.dislike_count + (disliked ? 1 : 0)}
+            {dislikeCount}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowReplyForm((value) => !value)}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Reply
           </button>
         </div>
+
+        {reactionError && (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs text-destructive">{reactionError}</p>
+            {reactionError.startsWith('Sign in') && (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/auth/sign-in">Sign in</Link>
+              </Button>
+            )}
+          </div>
+        )}
+
+        {showReplyForm && (
+          <form onSubmit={handleReplySubmit} className="mt-3 space-y-2">
+            <Textarea
+              value={replyContent}
+              onChange={(event) => setReplyContent(event.target.value)}
+              placeholder="Add a comment..."
+              className="min-h-20 text-sm"
+            />
+            {replyError && (
+              <div className="space-y-2">
+                <p className="text-xs text-destructive">{replyError}</p>
+                {replyError.startsWith('Sign in') && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/auth/sign-in">Sign in</Link>
+                  </Button>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReplyForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={isReplying}>
+                {isReplying ? 'Posting...' : 'Post comment'}
+              </Button>
+            </div>
+          </form>
+        )}
 
         {review.replies?.map((reply) => (
           <div
             key={reply.id}
-            className="mt-3 ml-4 border-l-2 border-border pl-3"
+            className={`mt-3 ml-4 border-l-2 pl-3 ${
+              reply.is_business_answer
+                ? 'border-primary bg-primary/5 py-2 pr-2'
+                : 'border-border'
+            }`}
           >
             <p className="text-xs font-medium">
               {reply.user.display_name}
+              {reply.is_business_answer && (
+                <Badge variant="outline" className="ml-2 text-[10px]">
+                  Owner reply
+                </Badge>
+              )}
               <span className="ml-1 font-normal text-muted-foreground">
                 replied {getTimeAgo(new Date(reply.created_at))}
               </span>

@@ -1,4 +1,5 @@
-import { getApiBaseUrl } from './restaurants';
+import { API_ENDPOINTS, getApiBaseUrl } from './restaurants';
+import { sessionRequest } from '@/app/(auth)/auth/_lib/auth-api';
 
 export type Review = {
   id: string;
@@ -29,6 +30,16 @@ export type ReviewResponse = {
   };
 };
 
+export type ReviewReaction = 'like' | 'dislike';
+
+export type ReviewReactionResult = {
+  success: boolean;
+  like_count?: number;
+  dislike_count?: number;
+  user_reaction?: ReviewReaction | null;
+  error?: string;
+};
+
 export async function fetchRestaurantReviews(
   slug: string,
   page = 1,
@@ -48,7 +59,7 @@ export async function fetchRestaurantReviews(
 
   try {
     const response = await fetch(
-      `${getApiBaseUrl()}/api/v1/restaurants/${slug}/reviews/?page=${page}&page_size=${pageSize}`,
+      `${API_ENDPOINTS.reviews.list(slug)}?page=${page}&page_size=${pageSize}`,
       { cache: 'no-store' },
     );
 
@@ -158,28 +169,63 @@ export async function submitReview(
   restaurantSlug: string,
   rating: number,
   content: string,
-): Promise<{ success: boolean; error?: string }> {
+  parentId?: string,
+): Promise<{ success: boolean; review?: Review; error?: string }> {
   try {
-    const response = await fetch(
-      `${getApiBaseUrl()}/api/v1/restaurants/${restaurantSlug}/reviews/`,
+    const body: { rating: number; content: string; parent_id?: string } = {
+      rating,
+      content,
+    };
+    if (parentId) {
+      body.parent_id = parentId;
+    }
+
+    const payload = await sessionRequest<unknown>(
+      API_ENDPOINTS.reviews.create(restaurantSlug),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, content }),
-        credentials: 'include',
+        body: JSON.stringify(body),
       },
     );
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => null);
-      return {
-        success: false,
-        error: error?.message || 'Failed to submit review.',
-      };
-    }
+    const review = normalizeReview(payload, Boolean(parentId));
+    return review ? { success: true, review } : { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error. Please try again.',
+    };
+  }
+}
 
-    return { success: true };
-  } catch {
-    return { success: false, error: 'Network error. Please try again.' };
+export async function reactToReview(
+  reviewId: string,
+  reaction: ReviewReaction,
+  remove = false,
+): Promise<ReviewReactionResult> {
+  try {
+    const data = await sessionRequest<Record<string, unknown>>(
+      `${getApiBaseUrl()}/api/v1/reviews/${reviewId}/${reaction}/`,
+      {
+        method: remove ? 'DELETE' : 'POST',
+      },
+    );
+    const userReaction = stringValue(data.user_reaction);
+
+    return {
+      success: true,
+      like_count: nonNegativeNumber(data.like_count) ?? 0,
+      dislike_count: nonNegativeNumber(data.dislike_count) ?? 0,
+      user_reaction:
+        userReaction === 'like' || userReaction === 'dislike'
+          ? userReaction
+          : null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error. Please try again.',
+    };
   }
 }

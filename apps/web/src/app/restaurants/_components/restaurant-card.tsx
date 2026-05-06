@@ -13,7 +13,7 @@ import {
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   type Restaurant,
-} from '../../lib/restaurants';
+} from '@/lib/restaurants';
 
 type RestaurantCardProps = {
   restaurant: Restaurant;

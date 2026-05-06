@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Restaurant } from '../../../lib/restaurants';
+import type { Restaurant } from '@/lib/restaurants';
 import {
   buildRestaurantWritePayload,
   emptyRestaurantFormValues,

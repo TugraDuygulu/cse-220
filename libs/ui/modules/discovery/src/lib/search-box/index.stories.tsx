@@ -3,7 +3,7 @@ import 'ui-common/styles/global.css';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState, type ComponentProps } from 'react';
 
-import { SearchBox } from './search-box';
+import { SearchBox } from './index';
 
 type SearchBoxProps = ComponentProps<typeof SearchBox>;
 
@@ -44,7 +44,7 @@ export const Default: Story = {
   render: (args) => <SearchBoxPlayground {...args} />,
   args: {
     placeholder: 'Search destinations, flavors, or tags...',
-    defaultExpanded: true,
+    defaultExpanded: false,
   },
 };
 

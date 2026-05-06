@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import type { Restaurant } from '@/lib/restaurants';
 
 import { useRestaurantData } from '../_hooks/use-restaurant-data';
 import { useExploreStore, useExploreUI } from '../_stores/explore-store';
@@ -11,6 +12,7 @@ import { SearchBar } from './search-bar';
 import { FilterBar } from './filter-bar';
 import { MapPanel } from './map-panel';
 import { RestaurantList } from './restaurant-list';
+import { SelectedRestaurantReviews } from './selected-restaurant-reviews';
 
 type ExploreViewProps = {
   initialQuery: string;
@@ -32,6 +34,8 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
   } = useRestaurantData(initialQuery, initialPage);
 
   const { showFilters, showListMobile, hoveredId } = useExploreUI();
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
   const {
     setInputValue,
     setPriceFilter,
@@ -117,16 +121,18 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
         />
       )}
 
-      <div className="relative flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         <div
-          className={`relative hidden flex-1 overflow-hidden bg-[radial-gradient(circle_at_30%_30%,_#f8fbff,_#eef4fa_55%,_#e8eef7_100%)] lg:block ${
+          className={`relative h-[42vh] shrink-0 overflow-hidden bg-muted lg:h-auto lg:flex-1 ${
             showListMobile ? 'lg:flex' : 'flex'
           }`}
         >
           <MapPanel
             restaurants={restaurants}
             hoveredId={hoveredId}
+            selectedId={selectedRestaurant?.id ?? null}
             onHover={setHoveredId}
+            onSelect={setSelectedRestaurant}
             query={query}
           />
         </div>
@@ -138,7 +144,13 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
           isLoading={isLoading}
           hoveredId={hoveredId}
           onHover={setHoveredId}
+          onSelect={setSelectedRestaurant}
           onPageChange={handlePageChange}
+        />
+
+        <SelectedRestaurantReviews
+          restaurant={selectedRestaurant}
+          onClose={() => setSelectedRestaurant(null)}
         />
       </div>
     </div>

@@ -35,13 +35,18 @@ import {
   RiUser3Line,
 } from '@remixicon/react';
 
-import { sessionRequest } from '../../../auth/_lib/auth-api';
+import { sessionRequest } from '@/app/(auth)/auth/_lib/auth-api';
 import {
   API_ENDPOINTS,
   type Restaurant,
   type RestaurantCategory,
   type User,
-} from '../../../lib/restaurants';
+} from '@/lib/restaurants';
+import {
+  fetchRestaurantReviews,
+  submitReview,
+  type Review,
+} from '@/lib/reviews';
 import {
   buildRestaurantWritePayload,
   emptyRestaurantFormValues,
@@ -193,7 +198,7 @@ export function OwnerDashboard() {
         description="Sign in with a restaurant owner account to manage listings."
       >
         <Button asChild>
-          <Link href="/business/signin" className="inline-flex items-center gap-1">
+          <Link href="/business/sign-in" className="inline-flex items-center gap-1">
             Open business sign in
             <RiArrowRightLine className="size-4" aria-hidden="true" />
           </Link>
@@ -558,6 +563,8 @@ export function OwnerDashboard() {
             </CardContent>
           </Card>
 
+          <OwnerReviewReplies restaurant={detailRestaurant ?? null} />
+
           <Card className="border border-border/70 bg-card/70 shadow-sm backdrop-blur">
             <CardHeader>
               <CardTitle>Coming next</CardTitle>
@@ -580,7 +587,7 @@ export function OwnerDashboard() {
               />
               <DisabledAction
                 icon={<RiStarLine className="size-4" aria-hidden="true" />}
-                label="Review replies"
+                label="Review analytics"
               />
             </CardContent>
           </Card>
@@ -592,6 +599,152 @@ export function OwnerDashboard() {
         </div>
       </div>
     </main>
+  );
+}
+
+function OwnerReviewReplies({ restaurant }: { restaurant: Restaurant | null }) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant) {
+      setReviews([]);
+      return;
+    }
+
+    const selectedRestaurant = restaurant;
+    let ignore = false;
+
+    async function loadReviews() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchRestaurantReviews(selectedRestaurant.slug, 1, 5);
+        if (!ignore) {
+          setReviews(response.data);
+        }
+      } catch {
+        if (!ignore) {
+          setError('Unable to load recent reviews.');
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadReviews();
+    return () => {
+      ignore = true;
+    };
+  }, [restaurant]);
+
+  async function submitReply(review: Review) {
+    if (!restaurant) return;
+
+    const content = (replyDrafts[review.id] ?? '').trim();
+    if (!content) {
+      setError('Write a reply before sending.');
+      return;
+    }
+
+    setSubmittingId(review.id);
+    setError(null);
+    setMessage(null);
+
+    const result = await submitReview(
+      restaurant.slug,
+      review.rating,
+      content,
+      review.id,
+    );
+
+    if (result.success && result.review) {
+      setReviews((current) =>
+        current.map((item) =>
+          item.id === review.id
+            ? { ...item, replies: [...(item.replies ?? []), result.review as Review] }
+            : item,
+        ),
+      );
+      setReplyDrafts((current) => ({ ...current, [review.id]: '' }));
+      setMessage('Reply posted.');
+    } else {
+      setError(result.error || 'Unable to post reply.');
+    }
+
+    setSubmittingId(null);
+  }
+
+  const openReviews = reviews.filter(
+    (review) => !review.replies?.some((reply) => reply.is_business_answer),
+  );
+
+  return (
+    <Card className="border border-border/70 bg-card/90 shadow-sm backdrop-blur">
+      <CardHeader>
+        <CardTitle>Review replies</CardTitle>
+        <CardDescription>
+          Respond to recent diner reviews for the selected restaurant.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!restaurant ? (
+          <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+            Create or select a restaurant before replying to reviews.
+          </div>
+        ) : isLoading ? (
+          <div className="space-y-2 text-sm text-muted-foreground">
+            Loading recent reviews...
+          </div>
+        ) : openReviews.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+            No unreplied reviews right now.
+          </div>
+        ) : (
+          openReviews.map((review) => (
+            <article key={review.id} className="space-y-3 rounded-lg border border-border/70 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">{review.user.display_name}</p>
+                  <p className="text-xs text-muted-foreground">{review.content}</p>
+                </div>
+                <Badge variant="secondary">{review.rating}/5</Badge>
+              </div>
+              <Textarea
+                value={replyDrafts[review.id] ?? ''}
+                onChange={(event) =>
+                  setReplyDrafts((current) => ({
+                    ...current,
+                    [review.id]: event.target.value,
+                  }))
+                }
+                placeholder="Write an owner reply..."
+                className="min-h-20 text-sm"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={submittingId === review.id}
+                  onClick={() => void submitReply(review)}
+                >
+                  {submittingId === review.id ? 'Posting...' : 'Post reply'}
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+        {message && <p className="text-xs text-primary">{message}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </CardContent>
+    </Card>
   );
 }
 

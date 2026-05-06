@@ -92,3 +92,4 @@ storybook-static
 
 .claude/worktrees
 .claude/settings.local.json
+/apps/web/tsconfig.tsbuildinfo

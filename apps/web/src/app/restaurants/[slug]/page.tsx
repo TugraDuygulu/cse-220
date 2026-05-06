@@ -16,8 +16,8 @@ import {
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   slugToTitle,
-} from '../../lib/restaurants';
-import { fetchRestaurantReviews } from '../../lib/reviews';
+} from '@/lib/restaurants';
+import { fetchRestaurantReviews } from '@/lib/reviews';
 import { ReviewSection } from '../_components/review-section';
 
 type RestaurantDetailPageProps = {

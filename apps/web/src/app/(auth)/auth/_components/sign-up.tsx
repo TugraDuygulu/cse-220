@@ -14,7 +14,7 @@ import {
   CardTitle,
   Input,
 } from 'ui-common';
-import { RiArrowRightLine, RiRestaurantLine, RiUserStarLine } from '@remixicon/react';
+import { RiArrowRightLine } from '@remixicon/react';
 
 import { registerUser } from '../_lib/auth-api';
 import {
@@ -69,8 +69,6 @@ export function SignUp({ variant }: SignUpProps) {
   }
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-      <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
         <Card className="w-full max-w-md border border-border/70 shadow-sm">
           <CardHeader className="space-y-2">
             <Badge variant={isBusiness ? 'secondary' : 'outline'}>
@@ -87,6 +85,25 @@ export function SignUp({ variant }: SignUpProps) {
           </CardHeader>
 
           <CardContent>
+            <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl border border-border/70 bg-muted/30 p-2">
+              <Button
+                asChild
+                variant={isBusiness ? 'secondary' : 'default'}
+                size="sm"
+                className="w-full"
+              >
+                <Link href="/auth/sign-up">Reviewer</Link>
+              </Button>
+              <Button
+                asChild
+                variant={isBusiness ? 'default' : 'secondary'}
+                size="sm"
+                className="w-full"
+              >
+                <Link href="/business/sign-up">Business</Link>
+              </Button>
+            </div>
+
             <form className="space-y-4" onSubmit={onSubmit}>
               <div className="space-y-2">
                 <label htmlFor="display-name" className="text-xs font-medium text-foreground">
@@ -155,20 +172,21 @@ export function SignUp({ variant }: SignUpProps) {
                 {isSubmitting ? 'Creating account...' : 'Create account'}
               </Button>
             </form>
+
           </CardContent>
 
           <CardFooter className="flex-col items-start gap-3 border-t border-border/60 px-4 pt-4">
             <p className="text-xs text-muted-foreground">
               Already have an account?{' '}
               <Link
-                href={isBusiness ? '/business/signin' : '/auth/signin'}
+                href={isBusiness ? '/business/sign-in' : '/auth/sign-in'}
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Sign in
               </Link>
             </p>
             <Link
-              href={isBusiness ? '/auth/signup' : '/business/signup'}
+              href={isBusiness ? '/auth/sign-up' : '/business/sign-up'}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
               {isBusiness ? 'Create a reviewer account' : 'Register a restaurant business'}
@@ -176,29 +194,5 @@ export function SignUp({ variant }: SignUpProps) {
             </Link>
           </CardFooter>
         </Card>
-      </section>
-
-      <aside className="hidden border-l border-border/60 bg-muted/20 lg:flex lg:items-center lg:justify-center">
-        <div className="max-w-md space-y-5 px-10">
-          <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            {isBusiness ? (
-              <RiRestaurantLine className="size-6" aria-hidden="true" />
-            ) : (
-              <RiUserStarLine className="size-6" aria-hidden="true" />
-            )}
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {isBusiness ? 'Self-service setup for owners' : 'A better local discovery loop'}
-            </h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {isBusiness
-                ? 'Create an owner account, add your restaurant, and keep the essential public details accurate without waiting on support.'
-                : 'Reviewer accounts go straight to restaurant discovery so you can browse, compare, and contribute quickly.'}
-            </p>
-          </div>
-        </div>
-      </aside>
-    </main>
   );
 }

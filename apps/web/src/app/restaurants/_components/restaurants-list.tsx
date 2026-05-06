@@ -18,7 +18,7 @@ import {
   normalizeRestaurantsResponse,
   type PaginationMeta,
   type Restaurant,
-} from '../../lib/restaurants';
+} from '@/lib/restaurants';
 import { RestaurantCard } from './restaurant-card';
 import { ErrorCallout } from '../../../components/callouts';
 

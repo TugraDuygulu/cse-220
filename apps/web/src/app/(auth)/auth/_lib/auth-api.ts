@@ -1,15 +1,15 @@
-import { API_ENDPOINTS, type User } from '../../lib/restaurants';
+import { API_ENDPOINTS, type User } from '@/lib/restaurants';
 import { normalizeApiError, type RegisterPayload } from './auth-flow';
 
-type ApiEnvelope<T> = {
+interface ApiEnvelope<T> {
   data?: T;
   error?: { message?: string };
-};
+}
 
-type LoginPayload = {
+interface LoginPayload {
   email: string;
   password: string;
-};
+}
 
 export async function sessionRequest<T>(
   url: string,

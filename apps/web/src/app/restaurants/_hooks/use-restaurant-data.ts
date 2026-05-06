@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   buildRestaurantsUrl,
   normalizeRestaurantsResponse,
-} from '../../lib/restaurants';
+} from '@/lib/restaurants';
 import {
   useExploreStore,
   useExploreRestaurants,

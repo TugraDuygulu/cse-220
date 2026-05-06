@@ -14,6 +14,8 @@ export type Restaurant = {
   city?: string;
   district?: string;
   address_line1?: string;
+  latitude?: number;
+  longitude?: number;
   website?: string;
   phone?: string;
   average_rating?: number;
@@ -152,6 +154,8 @@ export async function fetchRestaurantDetail(
     address_line1: payload.data.address_line1,
     website: payload.data.website,
     phone: payload.data.phone,
+    latitude: toNumber(payload.data.latitude),
+    longitude: toNumber(payload.data.longitude),
     average_rating: toNumber(payload.data.average_rating),
     review_count: toNumber(payload.data.review_count),
     price_range: payload.data.price_range,
@@ -273,6 +277,8 @@ function normalizeRestaurant(
     address_line1: candidate.address_line1,
     website: candidate.website,
     phone: candidate.phone,
+    latitude: toNumber(candidate.latitude),
+    longitude: toNumber(candidate.longitude),
     average_rating: toNumber(candidate.average_rating),
     review_count: toNumber(candidate.review_count),
     price_range: candidate.price_range,

@@ -10,7 +10,9 @@ User stories covered: 9, 10, 11, 12, 19, 20, 21, 31, 32, 38, 39
 
 ## What to build
 
-Create one consistent restaurant-scoped review thread contract that the frontend can use when a restaurant is selected. The contract should return top-level reviews, one-level comments, highlighted owner answers, reaction counts, and pagination metadata in a shape that can be normalized for review UI rendering.
+Create one consistent restaurant-scoped review thread contract that the frontend can use when a restaurant
+is selected. The contract should return top-level reviews, one-level comments, highlighted owner answers,
+reaction counts, and pagination metadata in a shape that can be normalized for review UI rendering.
 
 ## Acceptance criteria
 

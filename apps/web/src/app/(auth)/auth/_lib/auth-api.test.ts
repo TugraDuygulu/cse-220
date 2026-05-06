@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { API_ENDPOINTS } from '../../lib/restaurants';
+import { API_ENDPOINTS } from '@/lib/restaurants';
 import { sessionRequest } from './auth-api';
 
 describe('session API helpers', () => {

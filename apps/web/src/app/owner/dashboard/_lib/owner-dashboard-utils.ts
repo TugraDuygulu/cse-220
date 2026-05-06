@@ -1,4 +1,4 @@
-import type { Restaurant } from '../../../lib/restaurants';
+import type { Restaurant } from '@/lib/restaurants';
 
 export type RestaurantFormValues = {
   name: string;
