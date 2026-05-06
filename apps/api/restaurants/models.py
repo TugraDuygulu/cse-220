@@ -3,6 +3,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 
@@ -192,8 +193,24 @@ class OpeningHour(models.Model):
             )
         ]
 
+    def clean(self):
+        if not self.is_closed:
+            if not self.open_time or not self.close_time:
+                raise ValidationError(
+                    "Restoran kapalı değilse açılış ve kapanış saatleri zorunludur."
+                )
+            if self.open_time >= self.close_time:
+                raise ValidationError(
+                    "Kapanış saati açılış saatinden sonra olmalıdır."
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
-        return f"{self.restaurant.name} - {self.get_day_of_week_display()}"
+        status = "Kapalı" if self.is_closed else f"{self.open_time}-{self.close_time}"
+        return f"{self.restaurant.name} - {self.get_day_of_week_display()} ({status})"
 
 
 class Favorite(models.Model):

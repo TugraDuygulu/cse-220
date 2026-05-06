@@ -1,22 +1,27 @@
 """Restaurant data access layer."""
 
-from restaurants.models import Category, MenuItem, Restaurant
+from restaurants.models import Category, MenuItem, OpeningHour, Restaurant
 
 
 class RestaurantRepository:
     """Repository for restaurant persistence and queries."""
 
     def list_restaurants(self):
-        return Restaurant.objects.prefetch_related("categories").all()
+        return Restaurant.objects.prefetch_related("categories", "opening_hours").all()
 
     def list_categories(self):
         return Category.objects.all()
 
     def list_by_owner(self, owner):
-        return Restaurant.objects.prefetch_related("categories").filter(owner=owner)
+        return Restaurant.objects.prefetch_related("categories", "opening_hours").filter(owner=owner)
 
     def get_by_slug(self, slug: str):
-        return Restaurant.objects.select_related("owner").prefetch_related("categories").filter(slug=slug).first()
+        return (
+            Restaurant.objects.select_related("owner")
+            .prefetch_related("categories", "opening_hours")
+            .filter(slug=slug)
+            .first()
+        )
 
     def create(self, *, owner, data: dict) -> Restaurant:
         return Restaurant.objects.create(owner=owner, **data)
@@ -51,3 +56,11 @@ class RestaurantRepository:
 
     def delete_menu_item(self, menu_item: MenuItem) -> None:
         menu_item.delete()
+
+    def set_opening_hours(self, restaurant, hours_data: list):
+        OpeningHour.objects.filter(restaurant=restaurant).delete()
+        hours = [
+            OpeningHour(restaurant=restaurant, **hour)
+            for hour in hours_data
+        ]
+        return OpeningHour.objects.bulk_create(hours)
