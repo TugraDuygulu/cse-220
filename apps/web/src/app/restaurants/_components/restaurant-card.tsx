@@ -9,7 +9,7 @@ import {
 } from '@remixicon/react';
 
 import {
-  getRestaurantCoverImage,
+  getRestaurantImageUrl,
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   type Restaurant,
@@ -20,7 +20,7 @@ type RestaurantCardProps = {
 };
 
 export function RestaurantCard({ restaurant }: RestaurantCardProps) {
-  const imageUrl = getRestaurantCoverImage(restaurant.slug);
+  const imageUrl = getRestaurantImageUrl(restaurant);
   const distanceKm = getRestaurantDistanceKm(restaurant.slug);
   const isOpen = getRestaurantIsOpen(restaurant.slug);
 

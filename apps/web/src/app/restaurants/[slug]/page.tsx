@@ -13,6 +13,7 @@ import {
 import {
   fetchRestaurantDetail,
   getRestaurantCoverImage,
+  getRestaurantImageUrl,
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   slugToTitle,
@@ -34,7 +35,7 @@ export default async function RestaurantDetailPage({
   ]);
 
   const displayName = restaurant?.name || slugToTitle(slug);
-  const imageUrl = getRestaurantCoverImage(slug);
+  const imageUrl = restaurant ? getRestaurantImageUrl(restaurant) : getRestaurantCoverImage(slug);
   const distanceKm = getRestaurantDistanceKm(slug);
   const isOpen = getRestaurantIsOpen(slug);
 

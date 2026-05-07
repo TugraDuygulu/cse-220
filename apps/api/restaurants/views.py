@@ -1,6 +1,7 @@
 """Views for restaurant endpoints."""
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,6 +27,7 @@ class RestaurantsController(APIView):
     """List restaurants or create a new restaurant."""
 
     service_class = RestaurantService
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_service(self) -> RestaurantService:
         return self.service_class()
@@ -242,6 +244,7 @@ class RestaurantDetailController(APIView):
     """Retrieve, update, or delete a restaurant."""
 
     service_class = RestaurantService
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_service(self) -> RestaurantService:
         return self.service_class()

@@ -18,22 +18,7 @@ interface MapPanelProps {
   query: string;
 }
 
-const DEFAULT_CENTER: [number, number] = [121.4737, 31.2304];
-const DEFAULT_MARKERS = [
-  [121.466, 31.236],
-  [121.48, 31.225],
-  [121.493, 31.238],
-  [121.455, 31.218],
-  [121.505, 31.22],
-  [121.445, 31.245],
-  [121.472, 31.252],
-  [121.515, 31.242],
-  [121.46, 31.204],
-  [121.488, 31.206],
-  [121.43, 31.227],
-  [121.525, 31.213],
-] as const;
-
+const DEFAULT_CENTER: [number, number] = [28.9784, 41.0082];
 export function MapPanel({
   restaurants,
   hoveredId,
@@ -50,19 +35,22 @@ export function MapPanel({
         zoom={12}
         cooperativeGestures
       >
-        {restaurants.map((restaurant, index) => {
-          const [fallbackLongitude, fallbackLatitude] =
-            DEFAULT_MARKERS[index % DEFAULT_MARKERS.length];
-          const longitude = restaurant.longitude ?? fallbackLongitude;
-          const latitude = restaurant.latitude ?? fallbackLatitude;
+        {restaurants.map((restaurant) => {
+          if (
+            restaurant.longitude === undefined ||
+            restaurant.latitude === undefined
+          ) {
+            return null;
+          }
+
           const isActive =
             hoveredId === restaurant.id || selectedId === restaurant.id;
 
           return (
             <MapMarker
               key={restaurant.id}
-              longitude={longitude}
-              latitude={latitude}
+              longitude={restaurant.longitude}
+              latitude={restaurant.latitude}
               onClick={() => onSelect(restaurant)}
               onMouseEnter={() => onHover(restaurant.id)}
               onMouseLeave={() => onHover(null)}

@@ -48,6 +48,7 @@ export function SignIn({ variant }: SignInProps) {
     try {
       const user = await loginUser({ email, password });
       startTransition(() => router.push(destinationForRole(user.role)));
+      router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to sign in.');
     } finally {
@@ -56,7 +57,7 @@ export function SignIn({ variant }: SignInProps) {
   }
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <main className="grid min-h-screen bg-[radial-gradient(circle_at_top_left,oklch(0.98_0.03_85),transparent_34rem),linear-gradient(180deg,oklch(1_0_0),oklch(0.985_0.012_90))] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
       <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
         <Card className="w-full max-w-md border border-border/70 shadow-sm">
           <CardHeader className="space-y-2">
@@ -170,13 +171,6 @@ export function SignIn({ variant }: SignInProps) {
                 Create one
               </Link>
             </p>
-            <Link
-              href={isBusiness ? '/auth/sign-in' : '/business/sign-in'}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              {isBusiness ? 'Sign in as a reviewer' : 'Restaurant business sign in'}
-              <RiArrowRightLine className="size-3" aria-hidden="true" />
-            </Link>
           </CardFooter>
         </Card>
       </section>

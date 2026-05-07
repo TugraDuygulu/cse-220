@@ -8,7 +8,7 @@ import {
   RiTimeLine,
 } from '@remixicon/react';
 import {
-  getRestaurantCoverImage,
+  getRestaurantImageUrl,
   getRestaurantDistanceKm,
   getRestaurantIsOpen,
   type Restaurant,
@@ -29,7 +29,7 @@ export function RestaurantListItem({
   onLeave,
   onSelect,
 }: RestaurantListItemProps) {
-  const imageUrl = getRestaurantCoverImage(restaurant.slug);
+  const imageUrl = getRestaurantImageUrl(restaurant);
   const distanceKm = getRestaurantDistanceKm(restaurant.slug);
   const isOpen = getRestaurantIsOpen(restaurant.slug);
 

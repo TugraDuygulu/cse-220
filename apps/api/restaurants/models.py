@@ -78,12 +78,12 @@ class Restaurant(models.Model):
         blank=True,
         related_name="owned_restaurants",
     )
-    logo = models.ForeignKey(
+    primary_photo = models.ForeignKey(
         "files.StoredFile",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="restaurant_logos",
+        related_name="restaurant_primary_photos",
     )
 
     address_line1 = models.CharField(max_length=255)

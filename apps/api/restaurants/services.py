@@ -1,6 +1,9 @@
 """Restaurant application services."""
 
+from django.db import transaction
+
 from api.exceptions import ApiError
+from files.services import create_file_service
 from restaurants.repositories import RestaurantRepository
 from users.models import UserRole
 
@@ -12,6 +15,7 @@ class RestaurantService:
 
     def __init__(self, repository: RestaurantRepository | None = None) -> None:
         self.repository = repository or self.repository_class()
+        self.file_service = create_file_service()
 
     def list_restaurants(self, sort: str | None = None):
         return self.repository.list_restaurants(sort=sort)
@@ -42,11 +46,21 @@ class RestaurantService:
                 detail="You do not have permission to create a restaurant.",
             )
 
+        categories = data.pop("categories", [])
         opening_hours = data.pop("opening_hours", [])
-        restaurant = self.repository.create(owner=user, data=data)
+        primary_photo = data.pop("primary_photo", None)
 
-        if opening_hours:
-            self.repository.set_opening_hours(restaurant, opening_hours)
+        with transaction.atomic():
+            restaurant = self.repository.create(owner=user, data=data)
+
+            if categories:
+                restaurant.categories.set(categories)
+
+            if opening_hours:
+                self.repository.set_opening_hours(restaurant, opening_hours)
+
+            if primary_photo is not None:
+                self._set_primary_photo(restaurant=restaurant, uploaded_file=primary_photo)
 
         return restaurant
 
@@ -58,11 +72,24 @@ class RestaurantService:
                 detail="You do not have permission to update this restaurant.",
             )
 
+        categories = data.pop("categories", None)
         opening_hours = data.pop("opening_hours", None)
-        updated_restaurant = self.repository.save(restaurant, data)
+        primary_photo = data.pop("primary_photo", None)
 
-        if opening_hours is not None:
-            self.repository.set_opening_hours(updated_restaurant, opening_hours)
+        with transaction.atomic():
+            updated_restaurant = self.repository.save(restaurant, data)
+
+            if categories is not None:
+                updated_restaurant.categories.set(categories)
+
+            if opening_hours is not None:
+                self.repository.set_opening_hours(updated_restaurant, opening_hours)
+
+            if primary_photo is not None:
+                self._set_primary_photo(
+                    restaurant=updated_restaurant,
+                    uploaded_file=primary_photo,
+                )
 
         return updated_restaurant
 
@@ -73,6 +100,7 @@ class RestaurantService:
                 code="forbidden",
                 detail="You do not have permission to delete this restaurant.",
             )
+        self._delete_primary_photo(restaurant)
         self.repository.delete(restaurant)
 
     def list_menu_items(self, restaurant):
@@ -109,3 +137,28 @@ class RestaurantService:
             code="forbidden",
             detail="You do not have permission to manage this restaurant menu.",
         )
+
+    def _set_primary_photo(self, *, restaurant, uploaded_file) -> None:
+        previous_photo_id = restaurant.primary_photo_id
+        stored_file_id = None
+
+        try:
+            stored_file_id, _ = self.file_service.save(
+                uploaded_file,
+                category="restaurants",
+                entity_id=str(restaurant.id),
+                content_type=getattr(uploaded_file, "content_type", "application/octet-stream"),
+            )
+            restaurant.primary_photo_id = stored_file_id
+            restaurant.save(update_fields=["primary_photo", "updated_at"])
+        except Exception:
+            if stored_file_id is not None:
+                self.file_service.delete_by_id(stored_file_id)
+            raise
+
+        if previous_photo_id and previous_photo_id != stored_file_id:
+            self.file_service.delete_by_id(previous_photo_id)
+
+    def _delete_primary_photo(self, restaurant) -> None:
+        if restaurant.primary_photo_id:
+            self.file_service.delete_by_id(restaurant.primary_photo_id)

@@ -22,6 +22,7 @@ export type Restaurant = {
   review_count?: number;
   price_range?: string;
   category?: RestaurantCategory;
+  primary_photo_url?: string;
 };
 
 export type PaginationMeta = {

@@ -22,6 +22,7 @@ export type Restaurant = {
   review_count?: number;
   price_range?: string;
   category?: RestaurantCategory;
+  primary_photo_url?: string;
 };
 
 export type User = {
@@ -160,6 +161,7 @@ export async function fetchRestaurantDetail(
     review_count: toNumber(payload.data.review_count),
     price_range: payload.data.price_range,
     category: payload.data.category,
+    primary_photo_url: resolveApiAssetUrl(payload.data.primary_photo_url),
   };
 }
 
@@ -252,6 +254,28 @@ export function getRestaurantIsOpen(seed: string): boolean {
   return hash % 4 !== 0;
 }
 
+export function getRestaurantImageUrl(
+  restaurant: Pick<Restaurant, 'slug' | 'primary_photo_url'>,
+): string {
+  return (
+    resolveApiAssetUrl(restaurant.primary_photo_url) ||
+    getRestaurantCoverImage(restaurant.slug)
+  );
+}
+
+export function resolveApiAssetUrl(url?: string | null): string {
+  const normalizedUrl = url?.trim();
+  if (!normalizedUrl) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(normalizedUrl) || normalizedUrl.startsWith('data:')) {
+    return normalizedUrl;
+  }
+
+  return new URL(normalizedUrl, getApiBaseUrl()).toString();
+}
+
 function seededHash(seed: string): number {
   let hash = 0;
   for (let index = 0; index < seed.length; index += 1) {
@@ -283,6 +307,7 @@ function normalizeRestaurant(
     review_count: toNumber(candidate.review_count),
     price_range: candidate.price_range,
     category: candidate.category,
+    primary_photo_url: resolveApiAssetUrl(candidate.primary_photo_url),
   };
 }
 
