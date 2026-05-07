@@ -1,6 +1,7 @@
 """Views for restaurant endpoints."""
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,6 +27,7 @@ class RestaurantsController(APIView):
     """List restaurants or create a new restaurant."""
 
     service_class = RestaurantService
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_service(self) -> RestaurantService:
         return self.service_class()
@@ -99,7 +101,11 @@ class RestaurantsController(APIView):
             "price_range": request.query_params.get("price_range"),
             "min_rating": request.query_params.get("min_rating"),
         }
-        queryset = self.get_service().list_restaurants(filters)
+
+        sort = request.query_params.get("sort")
+        queryset = self.get_service().list_restaurants()
+        queryset = self.get_service().list_restaurants(filters, sort=sort)
+
         page_obj, pagination = paginate_queryset(queryset, request)
 
         include_fields = parse_csv_param(request.query_params.get("include"))
@@ -273,6 +279,7 @@ class RestaurantDetailController(APIView):
     """Retrieve, update, or delete a restaurant."""
 
     service_class = RestaurantService
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_service(self) -> RestaurantService:
         return self.service_class()

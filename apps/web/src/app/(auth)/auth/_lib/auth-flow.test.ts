@@ -8,7 +8,7 @@ import {
   roleForAuthVariant,
   usernameFromEmail,
 } from './auth-flow';
-import { getApiBaseUrl } from '@/lib/restaurants';
+import { getApiBaseUrl, resolveApiAssetUrl } from '@/lib/restaurants';
 
 describe('auth-flow utilities', () => {
   it('routes owners to the restaurant dashboard', () => {
@@ -75,5 +75,16 @@ describe('auth-flow utilities', () => {
         configurable: true,
       });
     }
+  });
+
+  it('resolves relative API asset paths against the API base URL', () => {
+    const apiBaseUrl = getApiBaseUrl();
+
+    expect(resolveApiAssetUrl('/api/v1/files/asset-123')).toBe(
+      `${apiBaseUrl}/api/v1/files/asset-123`,
+    );
+    expect(resolveApiAssetUrl('https://media.example.com/photo.jpg')).toBe(
+      'https://media.example.com/photo.jpg',
+    );
   });
 });

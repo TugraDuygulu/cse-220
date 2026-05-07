@@ -32,7 +32,7 @@ def test_urls_are_backed_by_drf_controller_classes():
     assert _view_class(review_urlpatterns, "<uuid:review_id>/").__name__ == "ReviewController"
     assert _view_class(review_urlpatterns, "<uuid:review_id>/like/").__name__ == "ReviewLikeController"
     assert _view_class(review_urlpatterns, "<uuid:review_id>/dislike/").__name__ == "ReviewDislikeController"
-
+    assert _view_class(review_urlpatterns, "<uuid:review_id>/replies/").__name__ == "ReviewRepliesController"
 
 def test_services_depend_on_repositories():
     assert UserService.repository_class is UserRepository
@@ -51,7 +51,7 @@ def test_controllers_depend_on_services():
     assert _view_class(review_urlpatterns, "<uuid:review_id>/").service_class is ReviewService
     assert _view_class(review_urlpatterns, "<uuid:review_id>/like/").service_class is ReviewService
     assert _view_class(review_urlpatterns, "<uuid:review_id>/dislike/").service_class is ReviewService
-
+    assert _view_class(review_urlpatterns, "<uuid:review_id>/replies/").service_class is ReviewService
 
 def test_drf_uses_session_authentication_only():
     assert settings.REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] == [

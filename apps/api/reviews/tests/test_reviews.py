@@ -3,67 +3,17 @@
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 
-from restaurants.models import Category, Restaurant
 from reviews.models import Review, ReviewLike
 from users.models import UserRole
+from tests.factories import (
+    create_review as _create_review,
+    create_restaurant as _create_restaurant,
+    create_user as _create_user,
+)
 
 pytestmark = pytest.mark.django_db
-
-
-def _create_user(*, role: str = UserRole.USER):
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-    return user_model.objects.create_user(
-        email=f"{role}-{suffix}@example.com",
-        username=f"{role}-{suffix}",
-        password="test-password-123",
-        display_name=f"{role.title()} {suffix}",
-        role=role,
-    )
-
-
-def _create_category(name_prefix: str = "Category"):
-    suffix = uuid.uuid4().hex[:8]
-    return Category.objects.create(
-        name=f"{name_prefix} {suffix}",
-        description="Category for tests",
-    )
-
-
-def _create_restaurant(owner=None):
-    category = _create_category("Review Test")
-    if owner is None:
-        owner = _create_user(role=UserRole.OWNER)
-    restaurant = Restaurant.objects.create(
-        name=f"Review Test Place {uuid.uuid4().hex[:8]}",
-        description="A place for review testing",
-        owner=owner,
-        address_line1="Street 1",
-        city="Istanbul",
-        district="Besiktas",
-        price_range="2",
-    )
-    restaurant.categories.set([category])
-    return restaurant
-
-
-def _create_review(
-    restaurant=None, user=None, rating=4, content="Good food", parent=None
-):
-    if restaurant is None:
-        restaurant = _create_restaurant()
-    if user is None:
-        user = _create_user()
-    return Review.objects.create(
-        restaurant=restaurant,
-        user=user,
-        rating=rating,
-        content=content,
-        parent=parent,
-    )
 
 
 def _valid_review_payload():

@@ -7,6 +7,7 @@ from reviews.views import (
     ReviewController,
     ReviewDislikeController,
     ReviewLikeController,
+    ReviewRepliesController
 )
 
 urlpatterns = [
@@ -14,4 +15,5 @@ urlpatterns = [
     path("<uuid:review_id>/", ReviewController.as_view(), name="reviews-detail"),
     path("<uuid:review_id>/like/", ReviewLikeController.as_view(), name="reviews-like"),
     path("<uuid:review_id>/dislike/", ReviewDislikeController.as_view(), name="reviews-dislike"),
+    path("<uuid:review_id>/replies/", ReviewRepliesController.as_view(), name="reviews-replies"),
 ]

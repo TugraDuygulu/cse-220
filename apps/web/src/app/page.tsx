@@ -11,7 +11,7 @@ import { SearchBox } from '@flavor-map/ui-module-discovery';
 
 import {
   buildRestaurantsUrl,
-  getRestaurantCoverImage,
+  getRestaurantImageUrl,
   normalizeRestaurantsResponse,
   type Restaurant,
 } from '@/lib/restaurants';
@@ -215,7 +215,7 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
     >
       <div className="relative h-44 overflow-hidden">
         <img
-          src={getRestaurantCoverImage(restaurant.slug)}
+          src={getRestaurantImageUrl(restaurant)}
           alt=""
           className="h-full w-full object-cover"
           loading="lazy"
@@ -248,7 +248,7 @@ function RestaurantPreview({ restaurant }: { restaurant: Restaurant }) {
       className="grid grid-cols-[8rem_minmax(0,1fr)] overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm transition hover:shadow-xl"
     >
       <img
-        src={getRestaurantCoverImage(restaurant.slug)}
+        src={getRestaurantImageUrl(restaurant)}
         alt=""
         className="h-full min-h-32 w-full object-cover"
         loading="lazy"

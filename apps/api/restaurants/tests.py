@@ -1,54 +1,117 @@
 """Tests for restaurant endpoints with guards and authentication."""
 
-import uuid
-
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
+from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
+from django.test.utils import override_settings
 
-from restaurants.models import Category, MenuItem, Restaurant
+from restaurants.models import MenuItem, Restaurant
 from users.models import UserRole
+from tests.factories import (
+    create_category as _create_category,
+    create_image_upload as _image_upload,
+    create_restaurant as _create_restaurant,
+    create_user as _create_user,
+)
 
 pytestmark = pytest.mark.django_db
 
 
-def _create_user(*, role: str = UserRole.USER):
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-    return user_model.objects.create_user(
-        email=f"restaurant-{role}-{suffix}@example.com",
-        username=f"restaurant-{role}-{suffix}",
-        password="test-password-123",
-        display_name=f"{role.title()} {suffix}",
-        role=role,
-    )
-
-
-def _create_category():
-    suffix = uuid.uuid4().hex[:8]
-    return Category.objects.create(
-        name=f"Test Category {suffix}",
-        description="Category for tests",
-    )
-
-
-def _create_restaurant(owner=None, slug=None):
-    if owner is None:
-        owner = _create_user(role=UserRole.OWNER)
+def test_restaurant_create_accepts_primary_photo_upload(tmp_path):
+    """POST /restaurants/ supports multipart restaurant photo uploads."""
+    client = Client()
+    owner = _create_user(role=UserRole.OWNER)
     category = _create_category()
-    suffix = uuid.uuid4().hex[:8]
-    restaurant = Restaurant.objects.create(
-        name=f"Test Restaurant {suffix}",
-        slug=slug or f"test-restaurant-{suffix}",
-        description="A test restaurant",
-        owner=owner,
-        address_line1="Test Street 123",
-        city="Istanbul",
-        district="Besiktas",
-        price_range="2",
-    )
-    restaurant.categories.set([category])
-    return restaurant
+
+    with override_settings(
+        FILE_STORAGE_LOCAL_ROOT=str(tmp_path),
+        FILE_STORAGE_LOCAL_URL="/media/",
+    ):
+        try:
+            client.force_login(owner)
+            response = client.generic(
+                "POST",
+                "/api/v1/restaurants/",
+                data=encode_multipart(
+                    BOUNDARY,
+                    {
+                        "name": "Ada Bistro",
+                        "category_ids": [str(category.id)],
+                        "description": "Seasonal plates",
+                        "address_line1": "Main Street 1",
+                        "city": "Istanbul",
+                        "district": "Kadikoy",
+                        "phone": "+90 555 0101",
+                        "website": "https://ada.example.com",
+                        "price_range": "2",
+                        "primary_photo": _image_upload(),
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+            )
+
+            assert response.status_code == 201
+            created = response.json()["data"]
+            assert created["primary_photo_url"].startswith("/api/v1/files/")
+
+            restaurant = Restaurant.objects.get(slug=created["slug"])
+            assert restaurant.primary_photo_id is not None
+        finally:
+            owner.delete()
+            category.delete()
+
+
+def test_restaurant_update_replaces_primary_photo(tmp_path):
+    """PATCH /restaurants/{slug}/ replaces the primary photo via multipart upload."""
+    client = Client()
+    owner = _create_user(role=UserRole.OWNER)
+    restaurant = _create_restaurant(owner=owner)
+    category = restaurant.categories.first()
+
+    with override_settings(
+        FILE_STORAGE_LOCAL_ROOT=str(tmp_path),
+        FILE_STORAGE_LOCAL_URL="/media/",
+    ):
+        try:
+            client.force_login(owner)
+            create_response = client.generic(
+                "PATCH",
+                f"/api/v1/restaurants/{restaurant.slug}/",
+                data=encode_multipart(
+                    BOUNDARY,
+                    {
+                        "category_ids": [str(category.id)],
+                        "primary_photo": _image_upload("restaurant-photo-1.png"),
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+            )
+
+            assert create_response.status_code == 200
+            first_photo_url = create_response.json()["data"]["primary_photo_url"]
+            assert first_photo_url.startswith("/api/v1/files/")
+
+            update_response = client.generic(
+                "PATCH",
+                f"/api/v1/restaurants/{restaurant.slug}/",
+                data=encode_multipart(
+                    BOUNDARY,
+                    {
+                        "category_ids": [str(category.id)],
+                        "primary_photo": _image_upload("restaurant-photo-2.png"),
+                    },
+                ),
+                content_type=MULTIPART_CONTENT,
+            )
+
+            assert update_response.status_code == 200
+            updated = update_response.json()["data"]
+            assert updated["primary_photo_url"].startswith("/api/v1/files/")
+            assert updated["primary_photo_url"] != first_photo_url
+        finally:
+            restaurant.delete()
+            category.delete()
+            owner.delete()
 
 def test_restaurant_list_no_auth_required():
     """GET /restaurants/ should not require authentication."""

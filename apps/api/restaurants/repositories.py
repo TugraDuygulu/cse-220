@@ -6,7 +6,7 @@ from restaurants.models import Category, MenuItem, OpeningHour, Restaurant
 class RestaurantRepository:
     """Repository for restaurant persistence and queries."""
 
-    def list_restaurants(self, filters: dict | None = None):
+    def list_restaurants(self, filters: dict | None = None, sort: str | None = None):
         queryset = Restaurant.objects.prefetch_related("categories", "opening_hours").all()
         filters = filters or {}
 
@@ -29,7 +29,9 @@ class RestaurantRepository:
 
         if category:
             queryset = queryset.distinct()
-
+ 
+        if sort == "rating":
+            queryset = queryset.order_by("-average_rating", "-review_count")
         return queryset
 
     def list_categories(self):

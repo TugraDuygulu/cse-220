@@ -51,15 +51,18 @@ class FileService:
             entity_id=entity_id,
             content_type=content_type,
         )
-        
-        # Create database record
-        record = self.repository.create(
-            path=stored.path,
-            category=category,
-            entity_id=entity_id,
-            content_type=content_type,
-            size=getattr(file, "size", None),
-        )
+
+        try:
+            record = self.repository.create(
+                path=stored.path,
+                category=category,
+                entity_id=entity_id,
+                content_type=content_type,
+                size=getattr(file, "size", None),
+            )
+        except Exception:
+            self.storage.delete(stored.path)
+            raise
 
         if not generate_thumbnails:
             return record.id, stored

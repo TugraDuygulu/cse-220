@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
+  AspectRatio,
   Badge,
   Button,
   Card,
@@ -41,6 +42,8 @@ import {
   type Restaurant,
   type RestaurantCategory,
   type User,
+  getRestaurantImageUrl,
+  resolveApiAssetUrl,
 } from '@/lib/restaurants';
 import {
   fetchRestaurantReviews,
@@ -48,7 +51,7 @@ import {
   type Review,
 } from '@/lib/reviews';
 import {
-  buildRestaurantWritePayload,
+  buildRestaurantWriteFormData,
   emptyRestaurantFormValues,
   restaurantToFormValues,
   type RestaurantFormValues,
@@ -67,7 +70,9 @@ export function OwnerDashboard() {
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadWarning, setLoadWarning] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -75,6 +80,7 @@ export function OwnerDashboard() {
     async function loadDashboard() {
       setLoadState('loading');
       setError(null);
+      setLoadWarning(null);
 
       try {
         const currentUser = await sessionRequest<User>(API_ENDPOINTS.auth.me());
@@ -89,7 +95,7 @@ export function OwnerDashboard() {
           return;
         }
 
-        const [ownedRestaurants, categoryList] = await Promise.all([
+        const [restaurantsResult, categoriesResult] = await Promise.allSettled([
           sessionRequest<Restaurant[]>(API_ENDPOINTS.restaurants.mine()),
           sessionRequest<RestaurantCategory[]>(API_ENDPOINTS.categories.list()),
         ]);
@@ -98,12 +104,28 @@ export function OwnerDashboard() {
           return;
         }
 
-        setRestaurants(ownedRestaurants);
-        setCategories(categoryList.filter((category) => category.id));
-        setFormValues((current) => ({
-          ...current,
-          categoryId: current.categoryId || categoryList[0]?.id || '',
-        }));
+        if (restaurantsResult.status === 'fulfilled') {
+          setRestaurants(restaurantsResult.value);
+        } else {
+          setRestaurants([]);
+          setLoadWarning((current) =>
+            current ?? 'We could not load your restaurant list right now.',
+          );
+        }
+
+        if (categoriesResult.status === 'fulfilled') {
+          const categoryList = categoriesResult.value.filter((category) => category.id);
+          setCategories(categoryList);
+          setFormValues((current) => ({
+            ...current,
+            categoryId: current.categoryId || categoryList[0]?.id || '',
+          }));
+        } else {
+          setCategories([]);
+          setLoadWarning((current) =>
+            current ?? 'We could not load restaurant categories right now.',
+          );
+        }
         setLoadState('ready');
       } catch (caught) {
         if (ignore) {
@@ -121,6 +143,18 @@ export function OwnerDashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!formValues.primaryPhotoFile) {
+      setPhotoPreviewUrl(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(formValues.primaryPhotoFile);
+    setPhotoPreviewUrl(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [formValues.primaryPhotoFile]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -128,17 +162,15 @@ export function OwnerDashboard() {
     setMessage(null);
 
     try {
-      const payload = buildRestaurantWritePayload(formValues);
+      const payload = buildRestaurantWriteFormData(formValues);
       const savedRestaurant = editingSlug
         ? await sessionRequest<Restaurant>(API_ENDPOINTS.restaurants.update(editingSlug), {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: payload,
           })
         : await sessionRequest<Restaurant>(API_ENDPOINTS.restaurants.create(), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: payload,
           });
 
       setRestaurants((current) => {
@@ -238,6 +270,10 @@ export function OwnerDashboard() {
     ? restaurants.find((restaurant) => restaurant.slug === editingSlug)
     : restaurants[0];
   const detailRestaurant = activeRestaurant ?? restaurants[0];
+  const previewImageUrl =
+    photoPreviewUrl ||
+    resolveApiAssetUrl(detailRestaurant?.primary_photo_url) ||
+    (detailRestaurant ? getRestaurantImageUrl(detailRestaurant) : null);
 
   return (
     <main className="min-h-screen bg-[#f7f8fb] text-foreground">
@@ -301,10 +337,32 @@ export function OwnerDashboard() {
                   </CardHeader>
                   <CardContent className="divide-y divide-border/70 px-0">
                     <div className="space-y-4 px-5 py-4">
+                      <div className="overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
+                        <AspectRatio ratio={16 / 10}>
+                          {previewImageUrl ? (
+                            <img
+                              src={previewImageUrl}
+                              alt={detailRestaurant?.name || 'Restaurant preview'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,oklch(0.98_0.01_90),oklch(0.94_0.02_86))] text-muted-foreground">
+                              <RiImageLine className="size-12" aria-hidden="true" />
+                            </div>
+                          )}
+                        </AspectRatio>
+                      </div>
                       <DetailRow label="Restaurant name" value={detailRestaurant?.name || 'Not created yet'} />
                       <DetailRow label="Category" value={detailRestaurant?.category?.name || 'Select category'} />
                       <DetailRow label="City" value={detailRestaurant?.city || formValues.city || 'Istanbul'} />
                       <DetailRow label="District" value={detailRestaurant?.district || formValues.district || 'Not set'} />
+                      <DetailRow
+                        label="Photo"
+                        value={
+                          formValues.primaryPhotoFile?.name ||
+                          (detailRestaurant?.primary_photo_url ? 'Current primary photo' : 'Upload a photo')
+                        }
+                      />
                     </div>
                     <div className="space-y-4 px-5 py-4">
                       <DetailRow label="Rating" value={totalReviews ? weightedRating.toFixed(1) : 'No reviews'} />
@@ -354,7 +412,7 @@ export function OwnerDashboard() {
                   />
                 </section>
 
-                <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)]">
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)]">
         <Card className="border border-border/70 bg-card shadow-sm">
           <CardHeader className="space-y-1">
             <CardTitle>{editingSlug ? 'Edit listing' : 'Create a listing'}</CardTitle>
@@ -367,6 +425,11 @@ export function OwnerDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {loadWarning && (
+              <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {loadWarning}
+              </p>
+            )}
             <form className="space-y-4" onSubmit={onSubmit}>
               <TextField
                 id="restaurant-name"
@@ -482,6 +545,32 @@ export function OwnerDashboard() {
                   placeholder="https://example.com"
                   disabled={isSubmitting}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="primary-photo" className="text-xs font-medium">
+                  Primary photo
+                </label>
+                <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+                  <input
+                    id="primary-photo"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      updateField('primaryPhotoFile', event.target.files?.[0] ?? null)
+                    }
+                    disabled={isSubmitting}
+                    className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    JPG, PNG, or WebP. Uploads replace the current front image.
+                  </p>
+                  {(formValues.primaryPhotoFile || formValues.primaryPhotoUrl) && (
+                    <p className="mt-2 text-xs font-medium text-foreground">
+                      {formValues.primaryPhotoFile?.name || 'Existing photo loaded'}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {message && (

@@ -1,4 +1,4 @@
-import type { Restaurant } from '@/lib/restaurants';
+import { resolveApiAssetUrl, type Restaurant } from '@/lib/restaurants';
 
 export type RestaurantFormValues = {
   name: string;
@@ -10,18 +10,8 @@ export type RestaurantFormValues = {
   phone: string;
   website: string;
   priceRange: string;
-};
-
-export type RestaurantWritePayload = {
-  name: string;
-  category_id: string;
-  description: string;
-  address_line1: string;
-  city: string;
-  district: string;
-  phone: string;
-  website: string;
-  price_range: string;
+  primaryPhotoFile: File | null;
+  primaryPhotoUrl: string;
 };
 
 export function emptyRestaurantFormValues(): RestaurantFormValues {
@@ -35,6 +25,8 @@ export function emptyRestaurantFormValues(): RestaurantFormValues {
     phone: '',
     website: '',
     priceRange: '2',
+    primaryPhotoFile: null,
+    primaryPhotoUrl: '',
   };
 }
 
@@ -51,21 +43,28 @@ export function restaurantToFormValues(
     phone: restaurant.phone ?? '',
     website: restaurant.website ?? '',
     priceRange: restaurant.price_range ?? '2',
+    primaryPhotoFile: null,
+    primaryPhotoUrl: resolveApiAssetUrl(restaurant.primary_photo_url),
   };
 }
 
-export function buildRestaurantWritePayload(
+export function buildRestaurantWriteFormData(
   values: RestaurantFormValues,
-): RestaurantWritePayload {
-  return {
-    name: values.name.trim(),
-    category_id: values.categoryId.trim(),
-    description: values.description.trim(),
-    address_line1: values.addressLine1.trim(),
-    city: values.city.trim(),
-    district: values.district.trim(),
-    phone: values.phone.trim(),
-    website: values.website.trim(),
-    price_range: values.priceRange.trim() || '2',
-  };
+): FormData {
+  const formData = new FormData();
+  formData.append('name', values.name.trim());
+  formData.append('category_ids', values.categoryId.trim());
+  formData.append('description', values.description.trim());
+  formData.append('address_line1', values.addressLine1.trim());
+  formData.append('city', values.city.trim());
+  formData.append('district', values.district.trim());
+  formData.append('phone', values.phone.trim());
+  formData.append('website', values.website.trim());
+  formData.append('price_range', values.priceRange.trim() || '2');
+
+  if (values.primaryPhotoFile) {
+    formData.append('primary_photo', values.primaryPhotoFile);
+  }
+
+  return formData;
 }

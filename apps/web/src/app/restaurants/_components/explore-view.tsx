@@ -101,29 +101,9 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
 
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background">
-      <SearchBar
-        value={searchParams.get('q') ?? ''}
-        onChange={setInputValue}
-        onSubmit={handleSearchSubmit}
-        onClear={handleSearchClear}
-        activeFilterCount={activeFilterCount}
-        showFilters={showFilters}
-        onToggleFilters={toggleFilters}
-      />
-
-      {showFilters && (
-        <FilterBar
-          filters={filters}
-          activeCount={activeFilterCount}
-          onPriceChange={setPriceFilter}
-          onRatingChange={setRatingFilter}
-          onClearAll={clearAllFilters}
-        />
-      )}
-
-      <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <div
-          className={`relative h-[42vh] shrink-0 overflow-hidden bg-muted lg:h-auto lg:flex-1 ${
+          className={`relative min-h-[42vh] shrink-0 overflow-hidden bg-muted lg:min-h-0 lg:flex-1 ${
             showListMobile ? 'lg:flex' : 'flex'
           }`}
         >
@@ -135,6 +115,32 @@ export function ExploreView({ initialQuery, initialPage }: ExploreViewProps) {
             onSelect={setSelectedRestaurant}
             query={query}
           />
+
+          <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex flex-col gap-2 sm:inset-x-4 sm:top-4 lg:inset-x-5 lg:top-5">
+            <div className="pointer-events-auto max-w-2xl">
+              <SearchBar
+                value={searchParams.get('q') ?? ''}
+                onChange={setInputValue}
+                onSubmit={handleSearchSubmit}
+                onClear={handleSearchClear}
+                activeFilterCount={activeFilterCount}
+                showFilters={showFilters}
+                onToggleFilters={toggleFilters}
+              />
+            </div>
+
+            {showFilters && (
+              <div className="pointer-events-auto max-w-2xl">
+                <FilterBar
+                  filters={filters}
+                  activeCount={activeFilterCount}
+                  onPriceChange={setPriceFilter}
+                  onRatingChange={setRatingFilter}
+                  onClearAll={clearAllFilters}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <RestaurantList

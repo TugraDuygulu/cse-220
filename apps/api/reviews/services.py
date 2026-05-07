@@ -43,6 +43,12 @@ class ReviewService:
                     code="validation_error",
                     detail="Parent review belongs to a different restaurant.",
                 )
+            if parent.parent_id is not None :
+                raise ApiError(
+                    status_code=400,
+                    code="validation_error",
+                    detail="Replies to replies are not allowed.",
+                )   
 
         try:
             with transaction.atomic():
