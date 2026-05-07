@@ -3,57 +3,23 @@
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 
-from restaurants.models import Category, Restaurant
 from reviews.models import Review
 from users.models import UserRole
+from tests.factories import create_category, create_review, create_restaurant, create_user
 
 pytestmark = pytest.mark.django_db
 
 
-def _create_user(*, role=UserRole.USER):
-    suffix = uuid.uuid4().hex[:8]
-    return get_user_model().objects.create_user(
-        email=f"reply-{role}-{suffix}@example.com",
-        username=f"reply-{role}-{suffix}",
-        password="test-pass-123",
-        display_name=f"{role} {suffix}",
-        role=role,
-    )
-
-
-def _create_restaurant(owner):
-    suffix = uuid.uuid4().hex[:8]
-    category = Category.objects.create(name=f"Cat {suffix}")
-    restaurant = Restaurant.objects.create(
-        name=f"Restaurant {suffix}",
-        description="desc",
-        owner=owner,
-        address_line1="Street 1",
-        city="Istanbul",
-        price_range="2",
-    )
-    restaurant.categories.set([category])
-    return restaurant, category
-
-
-def _create_review(*, restaurant, user, rating=4, content="Great place to eat here"):
-    return Review.objects.create(
-        restaurant=restaurant,
-        user=user,
-        rating=rating,
-        content=content,
-    )
-
 def test_reply_requires_authentication():
     """POST /reviews/<id>/replies/ must reject anonymous users."""
     client = Client()
-    owner = _create_user(role=UserRole.OWNER)
-    restaurant, category = _create_restaurant(owner)
-    reviewer = _create_user()
-    review = _create_review(restaurant=restaurant, user=reviewer)
+    owner = create_user(role=UserRole.OWNER, prefix="reply-owner")
+    category = create_category(name_prefix="Reply Cat")
+    restaurant = create_restaurant(owner=owner, categories=[category], name_prefix="Restaurant")
+    reviewer = create_user(prefix="reply-reviewer")
+    review = create_review(restaurant=restaurant, user=reviewer, content="Great place to eat here")
 
     try:
         response = client.post(
@@ -74,11 +40,12 @@ def test_reply_requires_authentication():
 def test_reply_created_successfully():
     """Authenticated user can reply to a top-level review."""
     client = Client()
-    owner = _create_user(role=UserRole.OWNER)
-    restaurant, category = _create_restaurant(owner)
-    reviewer = _create_user()
-    review = _create_review(restaurant=restaurant, user=reviewer)
-    replier = _create_user()
+    owner = create_user(role=UserRole.OWNER, prefix="reply-owner")
+    category = create_category(name_prefix="Reply Cat")
+    restaurant = create_restaurant(owner=owner, categories=[category], name_prefix="Restaurant")
+    reviewer = create_user(prefix="reply-reviewer")
+    review = create_review(restaurant=restaurant, user=reviewer, content="Great place to eat here")
+    replier = create_user(prefix="reply-replier")
 
     try:
         client.force_login(replier)
@@ -103,11 +70,12 @@ def test_reply_created_successfully():
 def test_reply_to_reply_is_rejected():
     """Replying to a reply must return 400 — only one level allowed."""
     client = Client()
-    owner = _create_user(role=UserRole.OWNER)
-    restaurant, category = _create_restaurant(owner)
-    reviewer = _create_user()
-    review = _create_review(restaurant=restaurant, user=reviewer)
-    replier = _create_user()
+    owner = create_user(role=UserRole.OWNER, prefix="reply-owner")
+    category = create_category(name_prefix="Reply Cat")
+    restaurant = create_restaurant(owner=owner, categories=[category], name_prefix="Restaurant")
+    reviewer = create_user(prefix="reply-reviewer")
+    review = create_review(restaurant=restaurant, user=reviewer, content="Great place to eat here")
+    replier = create_user(prefix="reply-replier")
     # Create a first reply directly in DB
     first_reply = Review.objects.create(
         restaurant=restaurant,
@@ -116,7 +84,7 @@ def test_reply_to_reply_is_rejected():
         content="This is already a reply.",
         parent=review,
     )
-    deep_replier = _create_user()
+    deep_replier = create_user(prefix="reply-deep")
 
     try:
         client.force_login(deep_replier)
@@ -140,11 +108,12 @@ def test_reply_to_reply_is_rejected():
 def test_replies_appear_nested_in_review_list():
     """Replies show up inline under their parent when listing restaurant reviews."""
     client = Client()
-    owner = _create_user(role=UserRole.OWNER)
-    restaurant, category = _create_restaurant(owner)
-    reviewer = _create_user()
-    review = _create_review(restaurant=restaurant, user=reviewer)
-    replier = _create_user()
+    owner = create_user(role=UserRole.OWNER, prefix="reply-owner")
+    category = create_category(name_prefix="Reply Cat")
+    restaurant = create_restaurant(owner=owner, categories=[category], name_prefix="Restaurant")
+    reviewer = create_user(prefix="reply-reviewer")
+    review = create_review(restaurant=restaurant, user=reviewer, content="Great place to eat here")
+    replier = create_user(prefix="reply-replier")
     Review.objects.create(
         restaurant=restaurant,
         user=replier,
@@ -172,7 +141,7 @@ def test_replies_appear_nested_in_review_list():
 def test_reply_to_nonexistent_review_returns_404():
     """POST /reviews/<random-id>/replies/ returns 404 for unknown review."""
     client = Client()
-    user = _create_user()
+    user = create_user(prefix="reply-user")
 
     try:
         client.force_login(user)

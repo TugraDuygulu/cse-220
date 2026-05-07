@@ -3,10 +3,10 @@
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 
 from users.models import UserRole
+from tests.factories import create_user as _create_user
 
 pytestmark = pytest.mark.django_db
 
@@ -58,15 +58,7 @@ def test_register_defaults_to_user_role():
 
 def test_login_creates_session_and_logout_clears_it():
     client = Client()
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-    user = user_model.objects.create_user(
-        email=f"login-{suffix}@example.com",
-        username=f"login-{suffix}",
-        password="test-password-123",
-        display_name="Login User",
-        role=UserRole.OWNER,
-    )
+    user = _create_user(role=UserRole.OWNER, prefix="login", display_name="Login User")
 
     response = client.post(
         "/api/v1/auth/login/",
@@ -85,18 +77,12 @@ def test_login_creates_session_and_logout_clears_it():
 
 def test_login_rejects_bad_credentials():
     client = Client()
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-    user_model.objects.create_user(
-        email=f"bad-login-{suffix}@example.com",
-        username=f"bad-login-{suffix}",
-        password="test-password-123",
-    )
+    user = _create_user(prefix="bad-login")
 
     response = client.post(
         "/api/v1/auth/login/",
         data={
-            "email": f"bad-login-{suffix}@example.com",
+            "email": user.email,
             "password": "wrong-password",
         },
         content_type="application/json",

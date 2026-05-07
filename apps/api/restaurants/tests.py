@@ -1,67 +1,20 @@
 """Tests for restaurant endpoints with guards and authentication."""
 
-import io
-import uuid
-
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.test.utils import override_settings
-from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image
 
-from restaurants.models import Category, MenuItem, Restaurant
+from restaurants.models import MenuItem, Restaurant
 from users.models import UserRole
+from tests.factories import (
+    create_category as _create_category,
+    create_image_upload as _image_upload,
+    create_restaurant as _create_restaurant,
+    create_user as _create_user,
+)
 
 pytestmark = pytest.mark.django_db
-
-
-def _create_user(*, role: str = UserRole.USER):
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-    return user_model.objects.create_user(
-        email=f"restaurant-{role}-{suffix}@example.com",
-        username=f"restaurant-{role}-{suffix}",
-        password="test-password-123",
-        display_name=f"{role.title()} {suffix}",
-        role=role,
-    )
-
-
-def _create_category():
-    suffix = uuid.uuid4().hex[:8]
-    return Category.objects.create(
-        name=f"Test Category {suffix}",
-        description="Category for tests",
-    )
-
-
-def _create_restaurant(owner=None, slug=None):
-    if owner is None:
-        owner = _create_user(role=UserRole.OWNER)
-    category = _create_category()
-    suffix = uuid.uuid4().hex[:8]
-    restaurant = Restaurant.objects.create(
-        name=f"Test Restaurant {suffix}",
-        slug=slug or f"test-restaurant-{suffix}",
-        description="A test restaurant",
-        owner=owner,
-        address_line1="Test Street 123",
-        city="Istanbul",
-        district="Besiktas",
-        price_range="2",
-    )
-    restaurant.categories.set([category])
-    return restaurant
-
-
-def _image_upload(name: str = "restaurant-photo.png", format_name: str = "PNG"):
-    buffer = io.BytesIO()
-    Image.new("RGB", (320, 240), color=(24, 48, 72)).save(buffer, format=format_name)
-    buffer.seek(0)
-    content_type = "image/png" if format_name == "PNG" else "image/jpeg"
-    return SimpleUploadedFile(name, buffer.read(), content_type=content_type)
 
 
 def test_restaurant_create_accepts_primary_photo_upload(tmp_path):

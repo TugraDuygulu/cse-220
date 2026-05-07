@@ -3,10 +3,13 @@
 import uuid
 
 import pytest
-from django.contrib.auth import get_user_model
 from django.test import Client
 
-from restaurants.models import Category, Restaurant
+from tests.factories import (
+    create_category as _create_category,
+    create_restaurant as _create_restaurant,
+    create_user as _create_user,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -40,30 +43,18 @@ def test_restaurants_routes_smoke():
 
 def test_restaurants_list_supports_pagination_and_include_fields():
     client = Client()
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-
-    owner = user_model.objects.create_user(
-        email=f"owner-{suffix}@example.com",
-        username=f"owner-{suffix}",
-        password="owner-password-123",
-        display_name="Owner",
-    )
-    category = Category.objects.create(
-        name=f"Turkish {suffix}",
-        description="Turkish cuisine",
-    )
-    restaurant = Restaurant.objects.create(
-        name=f"Bosphorus {suffix}",
-        description="Desc",
+    owner = _create_user(role="owner", prefix="owner", display_name="Owner")
+    category = _create_category(name_prefix="Turkish", description="Turkish cuisine")
+    restaurant = _create_restaurant(
         owner=owner,
-        address_line1="A",
+        categories=[category],
+        name_prefix="Bosphorus",
+        description="Desc",
         city="Istanbul",
         district="Kadikoy",
         average_rating="5.00",
         review_count=999999,
     )
-    restaurant.categories.set([category])
 
     try:
         response = client.get(
@@ -89,29 +80,20 @@ def test_restaurants_list_supports_pagination_and_include_fields():
 
 def test_restaurants_list_supports_explicit_relation_expansion():
     client = Client()
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-
-    owner = user_model.objects.create_user(
-        email=f"owner-relation-{suffix}@example.com",
-        username=f"owner-relation-{suffix}",
-        password="owner-password-123",
-        display_name="Owner Relation",
-    )
-    category = Category.objects.create(
-        name=f"Relation Category {suffix}",
+    owner = _create_user(role="owner", prefix="owner-relation", display_name="Owner Relation")
+    category = _create_category(
+        name_prefix="Relation Category",
         description="Relation expansion category",
     )
-    restaurant_name = f"Relation Test {suffix}"
-    restaurant = Restaurant.objects.create(
-        name=restaurant_name,
-        description="Desc",
+    restaurant = _create_restaurant(
         owner=owner,
-        address_line1="A",
+        categories=[category],
+        name_prefix="Relation Test",
+        description="Desc",
         city="Istanbul",
         district="Kadikoy",
     )
-    restaurant.categories.set([category])
+    restaurant_name = restaurant.name
 
     try:
         response = client.get(
@@ -131,31 +113,19 @@ def test_restaurants_list_supports_explicit_relation_expansion():
 
 def test_restaurants_list_does_not_expose_owner_fields():
     client = Client()
-    suffix = uuid.uuid4().hex[:8]
-    user_model = get_user_model()
-
-    owner = user_model.objects.create_user(
-        email=f"owner-hidden-{suffix}@example.com",
-        username=f"owner-hidden-{suffix}",
-        password="owner-password-123",
-        display_name="Owner Hidden",
-    )
-    category = Category.objects.create(
-        name=f"Seafood {suffix}",
-        description="Seafood",
-    )
-    restaurant_name = f"Blue Fish {suffix}"
-    restaurant = Restaurant.objects.create(
-        name=restaurant_name,
-        description="Desc",
+    owner = _create_user(role="owner", prefix="owner-hidden", display_name="Owner Hidden")
+    category = _create_category(name_prefix="Seafood", description="Seafood")
+    restaurant = _create_restaurant(
         owner=owner,
-        address_line1="A",
+        categories=[category],
+        name_prefix="Blue Fish",
+        description="Desc",
         city="Istanbul",
         district="Kadikoy",
         average_rating="5.00",
         review_count=999999,
     )
-    restaurant.categories.set([category])
+    restaurant_name = restaurant.name
 
     try:
         default_response = client.get("/api/v1/restaurants/?page_size=5")
@@ -195,14 +165,7 @@ def test_users_route_requires_authentication():
 
 def test_users_authenticated_smoke():
     client = Client()
-    user_model = get_user_model()
-    suffix = uuid.uuid4().hex[:8]
-    user = user_model.objects.create_user(
-        email=f"route-smoke-{suffix}@example.com",
-        username=f"route-smoke-{suffix}",
-        password="test-password-123",
-        display_name="Route Smoke",
-    )
+    user = _create_user(prefix="route-smoke", display_name="Route Smoke")
     client.force_login(user)
 
     me_response = client.get("/api/v1/users/me/")
