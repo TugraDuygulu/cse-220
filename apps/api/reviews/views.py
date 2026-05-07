@@ -106,3 +106,25 @@ class ReviewDislikeController(APIView):
         user = require_authenticated_user(request)
         review = service.get_review(review_id)
         return api_data(service.delete_reaction(user=user, review=review, is_like=False))
+    
+
+class ReviewRepliesController(APIView):
+    """Create a reply to a review."""
+
+    service_class = ReviewService
+
+    def get_service(self) -> ReviewService:
+        return self.service_class()
+
+    def post(self, request, review_id):
+        service = self.get_service()
+        review = service.get_review(review_id)
+        user = require_authenticated_user(request)
+        serializer = ReviewCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reply = service.create_review(
+            restaurant=review.restaurant,
+            user=user,
+            data={**serializer.validated_data, "parent_id": review.id},
+        )
+        return api_data(ReviewSerializer(reply).data, status_code=201)
