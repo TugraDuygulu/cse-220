@@ -67,7 +67,8 @@ class RestaurantsController(APIView):
         tags=["Restaurants"],
     )
     def get(self, request):
-        queryset = self.get_service().list_restaurants()
+        sort = request.query_params.get("sort")
+        queryset = self.get_service().list_restaurants(sort=sort)
         page_obj, pagination = paginate_queryset(queryset, request)
 
         include_fields = parse_csv_param(request.query_params.get("include"))

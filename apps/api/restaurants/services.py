@@ -13,8 +13,8 @@ class RestaurantService:
     def __init__(self, repository: RestaurantRepository | None = None) -> None:
         self.repository = repository or self.repository_class()
 
-    def list_restaurants(self):
-        return self.repository.list_restaurants()
+    def list_restaurants(self, sort: str | None = None):
+        return self.repository.list_restaurants(sort=sort)
 
     def list_categories(self):
         return self.repository.list_categories()

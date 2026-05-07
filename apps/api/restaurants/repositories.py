@@ -6,8 +6,11 @@ from restaurants.models import Category, MenuItem, OpeningHour, Restaurant
 class RestaurantRepository:
     """Repository for restaurant persistence and queries."""
 
-    def list_restaurants(self):
-        return Restaurant.objects.prefetch_related("categories", "opening_hours").all()
+    def list_restaurants(self, sort: str | None = None):
+        qs = Restaurant.objects.prefetch_related("categories", "opening_hours")
+        if sort == "rating":
+            qs = qs.order_by("-average_rating", "-review_count")
+        return qs
 
     def list_categories(self):
         return Category.objects.all()
